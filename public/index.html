@@ -1,83 +1,252 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MUD - Multi-User Dungeon</title>
 <style>
+  :root {
+    --bg: #0a0e14;
+    --panel: #0d1117;
+    --panel-2: #161b22;
+    --border: #21262d;
+    --text: #c9d1d9;
+    --muted: #6e7681;
+    --accent: #39d353;
+    --accent-dim: #238636;
+    --command: #58a6ff;
+    --error: #ff7b72;
+    --room: #ffd866;
+    --hp: #ff7b72;
+    --hp-bg: #2d1b1b;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    background: #0a0a0a;
-    color: #c0c0c0;
-    font-family: 'Courier New', monospace;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
     font-size: 14px;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "header header"
+      "log sidebar"
+      "input input";
     height: 100vh;
-    display: flex;
-    flex-direction: column;
+    overflow: hidden;
+  }
+  @media (max-width: 760px) {
+    body {
+      grid-template-columns: 1fr;
+      grid-template-areas: "header" "log" "input";
+    }
+    #sidebar { display: none; }
   }
   #header {
-    background: #111;
-    padding: 8px 12px;
-    border-bottom: 1px solid #222;
+    grid-area: header;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
   }
-  #header h1 { font-size: 16px; color: #0f0; font-weight: bold; }
-  #status { font-size: 12px; color: #666; }
-  #status.connected { color: #0f0; }
-  #status.disconnected { color: #f44; }
+  #header .brand { display: flex; align-items: center; gap: 10px; }
+  #header .logo {
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    background: var(--accent-dim);
+    border-radius: 7px;
+    font-weight: bold;
+    color: #fff;
+    font-size: 16px;
+  }
+  #header h1 { font-size: 16px; color: var(--accent); font-weight: 700; letter-spacing: 0.5px; }
+  #status {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #888;
+  }
+  #status.connected { color: var(--accent); }
+  #status.connected .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  #status.disconnected { color: var(--error); }
+  #status.disconnected .dot { background: var(--error); }
+
   #log {
-    flex: 1;
+    grid-area: log;
     overflow-y: auto;
-    padding: 12px;
+    padding: 14px 16px;
     line-height: 1.6;
+    background: var(--bg);
   }
   #log .line { white-space: pre-wrap; word-break: break-word; }
-  #log .line.command { color: #0af; }
-  #log .line.error { color: #f44; }
-  #log .line.system { color: #0f0; }
-  #log .line.room { color: #ff8; font-weight: bold; }
-  #input-bar {
+  #log .line.command { color: var(--command); }
+  #log .line.error { color: var(--error); }
+  #log .line.system { color: var(--accent); }
+  #log .line.room { color: var(--room); font-weight: bold; }
+  #log .line.npc { color: #ff9; }
+
+  #sidebar {
+    grid-area: sidebar;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 14px;
+    overflow-y: auto;
     display: flex;
-    background: #111;
-    border-top: 1px solid #222;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .card h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .val { color: var(--text); font-weight: 600; }
+  #hpbar {
+    height: 8px;
+    background: var(--hp-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  #hpfill { height: 100%; width: 100%; background: var(--hp); transition: width 0.3s; }
+  #map {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  #map .node {
+    aspect-ratio: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    padding: 2px;
+  }
+  #map .node.current {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 0 8px var(--accent-dim);
+  }
+  #map .node.legend { border-style: dashed; }
+
+  #input-bar {
+    grid-area: input;
+    display: flex;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
   }
   #prompt {
-    padding: 8px 12px;
-    color: #0f0;
-    border-right: 1px solid #222;
+    padding: 10px 14px;
+    color: var(--accent);
+    border-right: 1px solid var(--border);
+    font-weight: bold;
   }
   #input {
     flex: 1;
     background: transparent;
     border: none;
-    color: #c0c0c0;
+    color: var(--text);
     font-family: inherit;
     font-size: 14px;
-    padding: 8px;
+    padding: 10px 8px;
     outline: none;
   }
-  #input::placeholder { color: #333; }
-  ::-webkit-scrollbar { width: 8px; }
-  ::-webkit-scrollbar-track { background: #0a0a0a; }
-  ::-webkit-scrollbar-thumb { background: #333; }
+  #input::placeholder { color: #3d444d; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #484f58; }
 </style>
 </head>
 <body>
 <div id="header">
-  <h1>&gt; MUD</h1>
-  <span id="status" class="disconnected">Connecting...</span>
+  <div class="brand">
+    <div class="logo">M</div>
+    <h1>MUD</h1>
+  </div>
+  <span id="status" class="disconnected"><span class="dot"></span><span id="status-text">Connecting...</span></span>
 </div>
+
 <div id="log"></div>
+
+<div id="sidebar">
+  <div class="card">
+    <h2>角色狀態</h2>
+    <div class="stat-row"><span class="label">生命 HP</span><span class="val" id="stat-hp">-</span></div>
+    <div id="hpbar"><div id="hpfill"></div></div>
+    <div class="stat-row"><span class="label">攻擊</span><span class="val" id="stat-atk">-</span></div>
+    <div class="stat-row"><span class="label">防禦</span><span class="val" id="stat-def">-</span></div>
+    <div class="stat-row"><span class="label">位置</span><span class="val" id="stat-room">-</span></div>
+  </div>
+  <div class="card">
+    <h2>小地圖</h2>
+    <div id="map">
+      <div class="node legend">森林</div>
+      <div class="node" data-room="forest">森林</div>
+      <div class="node legend">寶藏</div>
+      <div class="node" data-room="village">村莊</div>
+      <div class="node" data-room="cave">山洞</div>
+      <div class="node" data-room="treasure">寶藏</div>
+      <div class="node legend">河邊</div>
+      <div class="node" data-room="river">河邊</div>
+      <div class="node legend">城堡</div>
+      <div class="node legend">守衛</div>
+      <div class="node" data-room="castle">城堡</div>
+      <div class="node legend">龍</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>常用指令</h2>
+    <div class="stat-row"><span class="label">look</span><span class="val">看四周</span></div>
+    <div class="stat-row"><span class="label">go</span><span class="val">移動</span></div>
+    <div class="stat-row"><span class="label">hit</span><span class="val">攻擊</span></div>
+    <div class="stat-row"><span class="label">say</span><span class="val">說聲</span></div>
+    <div class="stat-row"><span class="label">who</span><span class="val">誰在線上</span></div>
+    <div class="stat-row"><span class="label">status</span><span class="val">自己的狀態</span></div>
+  </div>
+</div>
+
 <div id="input-bar">
   <span id="prompt">&gt;</span>
-  <input type="text" id="input" placeholder="Type a command... (help for list)" autofocus autocomplete="off">
+  <input type="text" id="input" placeholder="輸入指令... (help 看清單)" autofocus autocomplete="off">
 </div>
+
 <script>
 const log = document.getElementById('log');
 const input = document.getElementById('input');
 const statusEl = document.getElementById('status');
+const statusText = document.getElementById('status-text');
 
 function getPlayerId() {
   let id = localStorage.getItem('mud_player_id');
@@ -91,7 +260,7 @@ function getPlayerId() {
 function getPlayerName() {
   let name = localStorage.getItem('mud_player_name');
   if (!name) {
-    name = prompt('Enter your character name:') || 'Player_' + getPlayerId().slice(-4);
+    name = prompt('輸入你的角色名字:') || 'Player_' + getPlayerId().slice(-4);
     localStorage.setItem('mud_player_name', name);
   }
   return name;
@@ -105,6 +274,22 @@ function printLine(text, cls) {
   log.scrollTop = log.scrollHeight;
 }
 
+function setStatus(cls, text) {
+  statusEl.className = cls;
+  statusText.textContent = text;
+}
+
+function setStat(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function highlightRoom(name) {
+  const key = (name || '').toLowerCase();
+  const el = document.querySelector('#map .node[data-room="' + key + '"]');
+  if (el) el.classList.add('current');
+}
+
 const playerId = getPlayerId();
 const playerName = getPlayerName();
 
@@ -113,37 +298,57 @@ const wsUrl = protocol + '//' + window.location.host + '/ws?player=' + playerId 
 
 let ws = null;
 let reconnectAttempts = 0;
+const history = [];
+let historyIndex = 0;
 
 function connect() {
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    statusEl.textContent = 'Connected as ' + playerName;
-    statusEl.className = 'connected';
+    setStatus('connected', 'Connected as ' + playerName);
     reconnectAttempts = 0;
     printLine('=== Connected ===', 'system');
     printLine('You are now in the game. Type "help" to start.', 'system');
+    input.focus();
   };
 
   ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (data.text) {
-        const lines = data.text.split('\n');
-        lines.forEach(line => {
-          const cls = line.startsWith('You are in:') ? 'room' :
-                      line.startsWith('Unknown command') ? 'error' : '';
-          printLine(line, cls);
-        });
-      }
-    } catch (e) {
-      printLine(event.data, '');
+    let data;
+    try { data = JSON.parse(event.data); } catch (e) { printLine(event.data, ''); return; }
+    if (data.text) {
+      const lines = data.text.split('\n');
+      lines.forEach(line => {
+        const l = line.toLowerCase();
+        let cls = '';
+        if (l.includes('hp:') || l.includes('attack:') || l.includes('defense:')) {
+          const m = l.match(/hp:\s*(\d+)\s*\/\s*(\d+)/);
+          if (m) {
+            const cur = parseInt(m[1], 10), max = parseInt(m[2], 10);
+            setStat('stat-hp', cur + ' / ' + max);
+            document.getElementById('hpfill').style.width = Math.max(0, Math.min(100, (cur / max) * 100)) + '%';
+          }
+          const atk = l.match(/attack:\s*(\d+)/);
+          if (atk) setStat('stat-atk', atk[1]);
+          const def = l.match(/defense:\s*(\d+)/);
+          if (def) setStat('stat-def', def[1]);
+          cls = 'system';
+        } else if (l.startsWith('you are in:')) {
+          const room = l.replace(/you are in:\s*/i, '').trim();
+          setStat('stat-room', room);
+          highlightRoom(room.split(' ')[0]);
+          cls = 'room';
+        } else if (l.startsWith('unknown command')) {
+          cls = 'error';
+        } else if (/goblin|shaman|raven|guard|dragon/.test(l) && l.includes('here')) {
+          cls = 'npc';
+        }
+        printLine(line, cls);
+      });
     }
   };
 
   ws.onclose = () => {
-    statusEl.textContent = 'Disconnected';
-    statusEl.className = 'disconnected';
+    setStatus('disconnected', 'Disconnected');
     if (reconnectAttempts < 5) {
       reconnectAttempts++;
       printLine('Connection lost. Reconnecting... (' + reconnectAttempts + ')', 'error');
@@ -152,8 +357,7 @@ function connect() {
   };
 
   ws.onerror = () => {
-    statusEl.textContent = 'Connection error';
-    statusEl.className = 'disconnected';
+    setStatus('disconnected', 'Connection error');
   };
 }
 
@@ -162,12 +366,26 @@ function sendCommand(cmd) {
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
   printLine('&gt; ' + text, 'command');
   ws.send(text);
+  history.push(text);
+  historyIndex = history.length;
 }
 
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     sendCommand(input.value);
     input.value = '';
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (history.length && historyIndex > 0) {
+      historyIndex--;
+      input.value = history[historyIndex] || '';
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (history.length && historyIndex < history.length) {
+      historyIndex++;
+      input.value = history[historyIndex] || '';
+    }
   }
 });
 
