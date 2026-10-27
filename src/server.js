@@ -55,8 +55,9 @@ wss.on('connection', (ws, req) => {
     // 發送歡迎訊息
     const roomName = mud.rooms[player.room] ? mud.rooms[player.room].name : '冒險者中心';
     const welcome = [
-      '=== 歡迎來到 MUD ===',
-      `你好，${player.name}！你現在身在 ${roomName}。`,
+      '=== 歡迎來到「萬王之王」MUD ===',
+      `見識一下吧，${player.name}！你身在 ${roomName}。`,
+      '亞特蘭狄斯王國正在邪神的陰影下掙扎，冒險者啊，拿起你的武器。',
       '輸入 "help" 查看指令清單。',
       '',
     ];
