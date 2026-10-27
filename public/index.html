@@ -20,6 +20,9 @@
     --room: #ffd866;
     --hp: #ff5f5f;
     --hp-bg: #2d1b1b;
+    --tile: 76px;
+    --gap: 10px;
+    --map-size: calc(var(--tile) * 8 + var(--gap) * 7);
     /* 生物群系色 */
     --c-hub: #6b4f2a;
     --c-hub-edge: #e6b93f;
@@ -100,7 +103,7 @@
   #main {
     grid-area: main;
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 330px 1fr;
     gap: 10px;
     padding: 12px;
     min-height: 0;
@@ -125,43 +128,82 @@
     font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--muted);
   }
+  #map-frame {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at center, rgba(230,185,63,.08) 0%, transparent 58%),
+      #0a0d15;
+    overflow: hidden;
+  }
   #map {
     position: relative;
-    flex: 1;
-    overflow: auto;
-    border-radius: 8px;
-    background:
-      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px),
-      #0a0d15;
-    background-size: 40px 40px, 40px 40px, auto;
+    width: var(--map-size);
+    height: var(--map-size);
+    transform-origin: center center;
+    transition: transform .35s ease;
+  }
+  #connections {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  #connections line {
+    stroke: rgba(230,185,63,.32);
+    stroke-width: 3;
+    stroke-dasharray: 5 7;
+  }
+  #connections line.active {
+    stroke: rgba(230,185,63,.86);
+    stroke-dasharray: none;
+    filter: drop-shadow(0 0 5px rgba(230,185,63,.8));
   }
   .tile {
     position: absolute;
-    width: 72px; height: 72px;
-    border-radius: 8px;
+    width: var(--tile);
+    height: var(--tile);
+    border-radius: 9px;
     display: grid;
     place-items: center;
     text-align: center;
     padding: 4px;
     font-size: 11px;
     color: #fff;
-    background: #1a2030;
-    border: 2px solid var(--border);
-    transition: box-shadow .3s;
+    background: #151a25;
+    border: 2px solid #252c3d;
+    transition: box-shadow .3s, border-color .3s, background .3s;
     line-height: 1.2;
     overflow: hidden;
+    z-index: 2;
   }
   .tile .emoji { font-size: 22px; display: block; margin-bottom: 2px; }
+  .tile.unexplored {
+    background: #0d1119;
+    border-color: #1d2333;
+    color: #596174;
+    opacity: .7;
+  }
+  .tile.unexplored .emoji { opacity: .38; }
+  .tile.reachable {
+    border-color: rgba(230,185,63,.58);
+    box-shadow: 0 0 10px rgba(230,185,63,.26);
+  }
   .tile.current {
     border-color: var(--gold);
-    box-shadow: 0 0 14px 3px rgba(230,185,63,.55);
-    z-index: 3;
+    box-shadow: 0 0 18px 4px rgba(230,185,63,.62);
+    z-index: 4;
   }
   .tile.current .you {
-    position: absolute; inset: 0;
-    display: grid; place-items: center;
-    background: rgba(230,185,63,.18);
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(230,185,63,.2);
+    z-index: 5;
   }
   .tile.current .you span {
     font-size: 26px;
@@ -173,6 +215,14 @@
   .tile.river    { background: linear-gradient(160deg,#2f6b9a,#16324a); }
   .tile.castle   { background: linear-gradient(160deg,#5f5a7e,#2b2840); }
   .tile.treasure { background: linear-gradient(160deg,#8a5f24,#3a2a10); border-color: #a5811f; }
+  .tile .compass {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    font-size: 9px;
+    color: rgba(255,255,255,.72);
+    z-index: 6;
+  }
 
   #legend { display: flex; flex-wrap: wrap; gap: 6px; }
   #legend .chip {
@@ -199,16 +249,15 @@
   #log .line.error { color: var(--error); }
   #log .line.system { color: var(--muted); font-style: italic; }
   #log .line.room { color: var(--room); font-weight: 600; }
-  #log .line.npc { color: var(--hp); }
+  #log .line.npc { color: #ff9d76; }
 
-  /* ---- 側邊欄 ---- */
+  /* ---- 側欄 ---- */
   #sidebar {
     grid-area: sidebar;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 12px;
-    overflow-y: auto;
     min-height: 0;
   }
   .card {
@@ -218,88 +267,76 @@
     padding: 12px;
   }
   .card h3 {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--muted); margin-bottom: 10px;
-    display: flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 10px;
   }
-  .char-avatar {
-    width: 48px; height: 48px;
-    border-radius: 50%;
-    display: grid; place-items: center;
-    background: radial-gradient(circle at 30% 30%, #7a5f3a, #3a2f1c);
-    font-size: 24px;
-    margin-bottom: 8px;
-    border: 2px solid var(--gold-dim);
-  }
-  .char-name { font-size: 16px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
-  .stat-row {
-    display: flex; justify-content: space-between;
-    font-size: 12px; color: var(--muted);
-    padding: 2px 0;
-  }
-  .stat-row .val { color: var(--text); font-weight: 600; }
+  .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .value { color: var(--text); font-weight: 600; text-align: right; max-width: 60%; word-break: break-all; }
   .hp-bar {
-    height: 10px;
+    height: 8px;
     background: var(--hp-bg);
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
-    margin: 8px 0 4px;
-    border: 1px solid #4a2a2a;
+    margin-bottom: 10px;
   }
-  .hp-fill {
+  .hp-bar .fill {
     height: 100%;
-    background: linear-gradient(90deg, #ff5f5f, #ff2a2a);
-    transition: width .4s ease;
-    box-shadow: 0 0 6px #ff2a2a inset;
+    width: 100%;
+    background: linear-gradient(90deg, #ff5f5f, #ff8c3a);
+    transition: width .3s;
   }
-  .quick-cmd {
-    display: flex; flex-wrap: wrap; gap: 6px;
+  .quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .quick-cmd button {
+  .quick button {
     background: var(--panel-2);
     border: 1px solid var(--border);
     color: var(--text);
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: 8px;
+    padding: 7px 9px;
     font-size: 12px;
-    transition: all .15s;
+    cursor: pointer;
+    transition: all .2s;
   }
-  .quick-cmd button:hover {
-    border-color: var(--gold);
+  .quick button:hover {
+    border-color: var(--gold-dim);
     color: var(--gold);
-    box-shadow: 0 0 8px rgba(230,185,63,.3);
+    transform: translateY(-1px);
   }
-  .quick-cmd button.danger { border-color: #5a3a3a; }
-  .quick-cmd button.danger:hover { border-color: var(--error); color: var(--error); box-shadow: 0 0 8px rgba(255,123,114,.3); }
 
-  /* ---- 輸入列 ---- */
+  /* ---- 輸入區 ---- */
   #input-area {
     grid-area: input;
-    background: var(--panel-2);
-    border-top: 2px solid var(--border);
-    padding: 12px;
+    padding: 10px 12px;
+    border-top: 2px solid var(--gold-dim);
+    background: linear-gradient(0deg, #0d1117, #151a26);
     display: flex;
-    gap: 8px;
+    gap: 10px;
   }
-  #cmd-prefix {
+  #prompt {
     color: var(--gold);
     font-weight: bold;
-    padding: 0 6px;
-    font-family: monospace;
+    line-height: 40px;
   }
-  #cmd-input {
+  #input {
     flex: 1;
-    background: #0a0d15;
+    background: #0a0e18;
     border: 1px solid var(--border);
     border-radius: 8px;
+    padding: 0 14px;
+    height: 40px;
     color: var(--text);
-    font-size: 14px;
-    padding: 10px 12px;
-    font-family: 'Noto Sans TC', 'Microsoft JhengHei', monospace;
+    font-family: inherit;
+    font-size: 15px;
     outline: none;
   }
-  #cmd-input:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(230,185,63,.3); }
+  #input:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 2px rgba(230,185,63,.15); }
 </style>
 </head>
 <body>
@@ -309,119 +346,139 @@
     <div class="logo">K</div>
     <div>
       <h1>萬王之王 MUD</h1>
-      <div class="sub">亞特蘭狄斯王國冒險</div>
+      <div class="sub">King of Kings · 線上泥巴冒險</div>
     </div>
   </div>
-  <div id="status">
-    <div class="dot"></div>
+  <div id="status" class="disconnected">
+    <span class="dot"></span>
     <span id="status-text">連線中…</span>
   </div>
 </header>
 
 <main id="main">
   <section id="map-panel">
-    <h2>地圖</h2>
-    <div id="map"></div>
-    <div id="legend"></div>
+    <h2>亞特蘭狄斯王國地圖</h2>
+    <div id="map-frame">
+      <div id="map">
+        <svg id="connections"></svg>
+      </div>
+    </div>
+    <div id="legend">
+      <span class="chip">🏛️ 冒險者中心</span>
+      <span class="chip">🌲 密語森林</span>
+      <span class="chip">🕳️ 幽暗洞窟</span>
+      <span class="chip">🌊 銀河河畔</span>
+      <span class="chip">🏰 王城大門</span>
+      <span class="chip">👑 王城大廳</span>
+      <span class="chip">🐉 巨龍寶藏</span>
+    </div>
   </section>
 
   <section id="log">
     <h2>冒險日誌</h2>
-    <div id="log-lines"></div>
   </section>
 </main>
 
 <aside id="sidebar">
   <div class="card">
-    <h3>🧝 角色狀態</h3>
-    <div class="char-avatar">🧝</div>
-    <div class="char-name" id="stat-name">--</div>
-    <div class="hp-bar"><div class="hp-fill" id="hpfill" style="width:100%"></div></div>
-    <div class="stat-row"><span>生命</span><span class="val" id="stat-hp">--</span></div>
-    <div class="stat-row"><span>攻擊</span><span class="val" id="stat-atk">--</span></div>
-    <div class="stat-row"><span>防禦</span><span class="val" id="stat-def">--</span></div>
-    <div class="stat-row"><span>地點</span><span class="val" id="stat-room">--</span></div>
+    <h3>角色狀態</h3>
+    <div class="stat-row"><span class="label">名字</span><span class="value" id="stat-name">—</span></div>
+    <div class="stat-row"><span class="label">位置</span><span class="value" id="stat-room">冒險者中心</span></div>
+    <div class="hp-bar"><div class="fill" id="hpfill" style="width:100%"></div></div>
+    <div class="stat-row"><span class="label">生命</span><span class="value" id="stat-hp">10 / 10</span></div>
+    <div class="stat-row"><span class="label">攻擊</span><span class="value" id="stat-atk">5</span></div>
+    <div class="stat-row"><span class="label">防禦</span><span class="value" id="stat-def">0</span></div>
   </div>
-
   <div class="card">
-    <h3>⚔️ 快捷指令</h3>
-    <div class="quick-cmd">
+    <h3>快速指令</h3>
+    <div class="quick">
       <button data-cmd="status">狀態</button>
       <button data-cmd="look">環顧</button>
       <button data-cmd="recall">召回</button>
       <button data-cmd="inventory">揹包</button>
-      <button data-cmd="say 有人嗎？">喊話</button>
+      <button data-cmd="say hello">喊話</button>
       <button data-cmd="help">說明</button>
       <button data-cmd="north">北</button>
       <button data-cmd="south">南</button>
       <button data-cmd="east">東</button>
       <button data-cmd="west">西</button>
-      <button data-cmd="combat" class="danger">戰鬥</button>
+      <button data-cmd="hit 哥布林">戰鬥</button>
     </div>
   </div>
 </aside>
 
-<div id="input-area">
-  <span id="cmd-prefix">&gt;</span>
-  <input id="cmd-input" type="text" autocomplete="off" placeholder="輸入指令，例如：help、北、combat、recall…" />
-</div>
+<footer id="input-area">
+  <span id="prompt">❯</span>
+  <input id="input" type="text" autocomplete="off" spellcheck="false" placeholder="輸入指令，例如：help、北、召回、hit 巨龍…">
+</footer>
 
 <script>
-/* 房間座標（磁貼格）：hub 為中心 */
+const TILE = 76;
+const GAP = 10;
+
 const ROOMS = {
-  hub:          { x: 3, y: 3, name: '冒險者中心', emoji: '🏛️', biome: 'hub' },
-  forest:       { x: 3, y: 2, name: '密語森林',   emoji: '🌲', biome: 'forest' },
-  cave:         { x: 2, y: 3, name: '幽暗洞窟',   emoji: '🕳️', biome: 'cave' },
-  river:        { x: 3, y: 4, name: '銀河河畔',   emoji: '🌊', biome: 'river' },
-  castle_gate:  { x: 4, y: 3, name: '王城大門',   emoji: '🏰', biome: 'castle' },
-  castle_hall:  { x: 5, y: 3, name: '王城大廳',   emoji: '👑', biome: 'castle' },
-  treasure:     { x: 6, y: 3, name: '巨龍寶藏',   emoji: '🐉', biome: 'treasure' },
+  hub:          { name: '冒險者中心', emoji: '🏛️', biome: 'hub',      x: 4, y: 4 },
+  forest:       { name: '密語森林',   emoji: '🌲', biome: 'forest',   x: 4, y: 3 },
+  cave:         { name: '幽暗洞窟',   emoji: '🕳️', biome: 'cave',     x: 3, y: 4 },
+  river:        { name: '銀河河畔',   emoji: '🌊', biome: 'river',    x: 4, y: 5 },
+  castle_gate:  { name: '王城大門',   emoji: '🏰', biome: 'castle',   x: 5, y: 4 },
+  castle_hall:  { name: '王城大廳',   emoji: '👑', biome: 'castle',   x: 5, y: 3 },
+  treasure:     { name: '巨龍寶藏',   emoji: '🐉', biome: 'treasure', x: 5, y: 2 },
 };
+
 const ROOM_BY_NAME = {};
-Object.entries(ROOMS).forEach(([key, r]) => ROOM_BY_NAME[r.name] = key);
+Object.entries(ROOMS).forEach(([k, v]) => { ROOM_BY_NAME[v.name] = k; });
 
-const TILE = 72, GAP = 8;
+// 相鄰關係（雙向補全），對應 mud.js 的 exits。
+const LINKS = [
+  ['hub', 'forest'],
+  ['hub', 'castle_gate'],
+  ['hub', 'river'],
+  ['hub', 'cave'],
+  ['forest', 'cave'],
+  ['forest', 'river'],
+  ['forest', 'castle_gate'],
+  ['castle_gate', 'castle_hall'],
+  ['castle_hall', 'treasure'],
+];
 
-function printLine(text, cls='') {
-  const box = document.getElementById('log-lines');
+let currentRoom = 'hub';
+const explored = new Set(['hub']);
+
+function getPlayerId() {
+  const q = new URLSearchParams(location.search).get('pid');
+  if (q) return q;
+  let id = localStorage.getItem('mud_player_id');
+  if (!id) {
+    id = 'P' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    localStorage.setItem('mud_player_id', id);
+  }
+  return id;
+}
+
+function getPlayerName() {
+  const q = new URLSearchParams(location.search).get('name');
+  if (q) return q;
+  let n = localStorage.getItem('mud_player_name');
+  if (!n) {
+    n = 'Player_' + Math.random().toString(36).slice(2, 6);
+    localStorage.setItem('mud_player_name', n);
+  }
+  return n;
+}
+
+function printLine(text, cls) {
+  const log = document.getElementById('log');
   const div = document.createElement('div');
-  div.className = 'line ' + cls;
+  div.className = 'line' + (cls ? ' ' + cls : '');
   div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-  while (box.children.length > 400) box.removeChild(box.firstChild);
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
 }
 
 function setStatus(state, text) {
   const el = document.getElementById('status');
   el.className = state;
-  document.getElementById('status-text').textContent = text;
-}
-
-function getPlayerId() {
-  let id = sessionStorage.getItem('mudPlayerId');
-  if (!id) { id = 'p_' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('mudPlayerId', id); }
-  return id;
-}
-function getPlayerName() {
-  let name = sessionStorage.getItem('mudPlayerName');
-  if (!name) {
-    const pool = ['艾利安娜','托爾夫','塞琳','布蘭德','麗塔','芬恩','格蕾絲','奧登','希雅','盧西安'];
-    name = pool[Math.floor(Math.random() * pool.length)];
-    sessionStorage.setItem('mudPlayerName', name);
-  }
-  return name;
-}
-
-document.querySelectorAll('.quick-cmd button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    sendCommand(btn.dataset.cmd);
-    input.focus();
-  });
-});
-
-const input = document.getElementById('cmd-input');
-function statusText(text) {
   const statusText = document.getElementById('status-text');
   statusText.textContent = text;
 }
@@ -430,63 +487,139 @@ function setStat(id, val) {
   if (el) el.textContent = val;
 }
 
-/* 建立磁貼 */
 const mapEl = document.getElementById('map');
+const svgEl = document.getElementById('connections');
+
+function tileLeft(key) { return ROOMS[key].x * (TILE + GAP); }
+function tileTop(key) { return ROOMS[key].y * (TILE + GAP); }
+
 function buildTiles() {
-  mapEl.innerHTML = '';
-  const pad = 14;
+  mapEl.querySelectorAll('.tile, line').forEach(n => n.remove());
+  for (let gx = 0; gx < 8; gx++) {
+    for (let gy = 0; gy < 8; gy++) {
+      const t = document.createElement('div');
+      t.className = 'tile unexplored';
+      t.style.left = (gx * (TILE + GAP)) + 'px';
+      t.style.top = (gy * (TILE + GAP)) + 'px';
+      t.dataset.grid = gx + ',' + gy;
+      t.innerHTML = '<div class="emoji">？</div>未探索';
+      mapEl.appendChild(t);
+    }
+  }
+
   Object.entries(ROOMS).forEach(([key, r]) => {
-    const t = document.createElement('div');
-    t.className = 'tile ' + r.biome;
-    t.dataset.room = key;
-    t.style.width = TILE + 'px';
-    t.style.height = TILE + 'px';
-    // 中心點定位，之後再整體平移使玩家中心
-    t.style.left = (r.x * (TILE + GAP) + pad) + 'px';
-    t.style.top = (r.y * (TILE + GAP) + pad) + 'px';
-    t.innerHTML = `<div class="emoji">${r.emoji}</div>${r.name}`;
-    mapEl.appendChild(t);
+    const occupied = Array.from(mapEl.querySelectorAll('.tile'))
+      .find(t => t.dataset.grid === r.x + ',' + r.y);
+    if (!occupied) return;
+    occupied.classList.remove('unexplored');
+    occupied.classList.add(r.biome);
+    occupied.dataset.room = key;
+    occupied.innerHTML = `<div class="emoji">${r.emoji}</div>${r.name}`;
+  });
+
+  LINKS.forEach(([a, b]) => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', tileLeft(a) + TILE / 2);
+    line.setAttribute('y1', tileTop(a) + TILE / 2);
+    line.setAttribute('x2', tileLeft(b) + TILE / 2);
+    line.setAttribute('y2', tileTop(b) + TILE / 2);
+    line.dataset.link = a + '|' + b;
+    svgEl.appendChild(line);
+  });
+
+  fitMap();
+  window.addEventListener('resize', fitMap);
+}
+
+function fitMap() {
+  const frame = document.getElementById('map-frame');
+  if (!frame) return;
+  const scale = Math.min(frame.clientWidth, frame.clientHeight) / (TILE * 8 + GAP * 7 + 12);
+  mapEl.style.transform = 'scale(' + Math.min(1, Math.max(.45, scale)) + ')';
+}
+
+function getNeighbors(roomKey) {
+  const linked = [];
+  LINKS.forEach(([a, b]) => {
+    if (a === roomKey) linked.push(b);
+    if (b === roomKey) linked.push(a);
+  });
+  return linked;
+}
+
+function updateMap(roomKey) {
+  currentRoom = roomKey;
+  if (ROOMS[roomKey]) explored.add(roomKey);
+  const room = ROOMS[roomKey];
+  const compassText = room ? getCompassFor(roomKey) : '';
+
+  mapEl.querySelectorAll('.tile').forEach(t => {
+    const key = t.dataset.room;
+    const isCurrent = key === roomKey;
+    const isKnown = key && explored.has(key);
+    t.classList.toggle('current', isCurrent);
+    t.classList.toggle('unexplored', !isKnown);
+    t.classList.remove('reachable');
+
+    const compass = t.querySelector('.compass');
+    if (compass) compass.remove();
+    if (isKnown || isCurrent) {
+      const c = document.createElement('div');
+      c.className = 'compass';
+      c.textContent = compassText[key] || '';
+      t.appendChild(c);
+    }
+
+    const you = t.querySelector('.you');
+    if (isCurrent) {
+      if (!you) {
+        const y = document.createElement('div');
+        y.className = 'you';
+        y.innerHTML = '<span>🧝</span>';
+        t.appendChild(y);
+      }
+    } else if (you) {
+      you.remove();
+    }
+
+    if (isKnown) {
+      const biomeTile = key ? document.querySelector(`.tile[data-room="${key}"]`) : null;
+      if (biomeTile) biomeTile.classList.toggle('reachable',
+        getNeighbors(roomKey).includes(key) && key !== roomKey
+      );
+    }
+  });
+
+  svgEl.querySelectorAll('line').forEach(line => {
+    const [a, b] = line.dataset.link.split('|');
+    line.classList.toggle('active', a === roomKey || b === roomKey);
   });
 }
-buildTiles();
 
-function centerOn(roomKey) {
-  currentRoom = roomKey;
+function getCompassFor(roomKey) {
   const r = ROOMS[roomKey];
-  if (!r) return;
-  // 磁貼中心置中
-  const mapW = mapEl.clientWidth;
-  const mapH = mapEl.clientHeight;
-  const pad = 14;
-  const tileCX = r.x * (TILE + GAP) + pad + TILE / 2;
-  const tileCY = r.y * (TILE + GAP) + pad + TILE / 2;
-  mapEl.scrollTo({
-    left: tileCX - mapW / 2,
-    top: tileCY - mapH / 2,
-    behavior: 'smooth'
-  });
-  document.querySelectorAll('.tile.current').forEach(t => {
-    t.classList.remove('current');
-    const you = t.querySelector('.you');
-    if (you) you.remove();
-  });
-  const el = document.querySelector('.tile[data-room="' + roomKey + '"]');
-  if (el) {
-    el.classList.add('current');
-    const you = document.createElement('div');
-    you.className = 'you';
-    you.innerHTML = '<span>🧝</span>';
-    el.appendChild(you);
-  }
+  if (!r) return {};
+  const compass = {};
+  const neighbors = getNeighbors(roomKey);
+  if (neighbors.includes('forest')) compass.forest = '南';
+  if (neighbors.includes('cave')) compass.cave = '西';
+  if (neighbors.includes('river')) compass.river = '東';
+  if (neighbors.includes('castle_gate')) compass.castle_gate = '北';
+  if (neighbors.includes('castle_hall')) compass.castle_gate = '南';
+  if (neighbors.includes('treasure')) compass.castle_hall = '南';
+  if (neighbors.includes('castle_hall')) compass.treasure = '北';
+  return compass;
 }
 
 function roomKeyFromName(name) {
   if (!name) return null;
   if (ROOM_BY_NAME[name]) return ROOM_BY_NAME[name];
-  // 後端可能直接傳 key
   if (ROOMS[name]) return name;
   return null;
 }
+
+buildTiles();
+updateMap('hub');
 
 const playerId = getPlayerId();
 const playerName = getPlayerName();
@@ -499,6 +632,8 @@ let ws = null;
 let reconnectAttempts = 0;
 const history = [];
 let historyIndex = 0;
+
+const input = document.getElementById('input');
 
 function connect() {
   ws = new WebSocket(wsUrl);
@@ -519,7 +654,6 @@ function connect() {
       lines.forEach(line => {
         let cls = '';
         const l = line;
-        // 狀態輸出
         const hpMatch = l.match(/生命：\s*(\d+)\s*\/\s*(\d+)/);
         const atkMatch = l.match(/攻擊：\s*(\d+)/);
         const defMatch = l.match(/防禦：\s*(\d+)/);
@@ -538,12 +672,12 @@ function connect() {
         } else if (l.startsWith('你身在：')) {
           const roomName = l.replace(/^你身在：\s*/, '').trim();
           setStat('stat-room', roomName);
-          centerOn(roomKeyFromName(roomName) || 'hub');
+          updateMap(roomKeyFromName(roomName) || 'hub');
           cls = 'room';
         } else if (l.startsWith('位置：')) {
           const roomName = l.replace(/^位置：\s*/, '').trim();
           setStat('stat-room', roomName);
-          centerOn(roomKeyFromName(roomName) || 'hub');
+          updateMap(roomKeyFromName(roomName) || 'hub');
           cls = 'system';
         } else if (l.startsWith('未知指令')) {
           cls = 'error';
@@ -595,7 +729,13 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
-centerOn('hub');
+document.querySelectorAll('.quick button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    sendCommand(btn.dataset.cmd);
+    input.focus();
+  });
+});
+
 connect();
 </script>
 </body>
