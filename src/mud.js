@@ -1,52 +1,59 @@
-// 房間、NPC、物品、指令定義（中文版）
+// 房間、NPC、物品、指令定義（萬王之王 King of Kings 世界觀）
 class MUD {
   constructor() {
     this.rooms = {
       hub: {
         name: '冒險者中心',
-        description: '冒險者中心，所有旅程的起點。中央有一座發光的水晶柱，可以召喚你回到這裡。',
+        biome: 'hub',
+        description: '王城亞特蘭狄斯（Atlantis）的冒險者中心，中央矗立著聖殿水晶柱，發出柔和的金光。據說它是王國與眾神交會之處，召喚之力可將旅人送回此地。',
         exits: { north: 'forest', east: 'castle_gate', south: 'river', west: 'cave' },
         items: ['healing_potion', 'torch'],
         npcs: [],
       },
       forest: {
-        name: '黑暗森林',
-        description: '高聳的樹木遮住了天空，遠處傳來哥布林的咯咯笑聲。',
+        name: '密語森林',
+        biome: 'forest',
+        description: '古老橡樹層疊遮蔽天日，遠處傳來獸人的嚎叫。傳說這裡曾是「大惡魔」殘軍盤踞之地。',
         exits: { north: 'cave', south: 'hub', east: 'river', west: 'castle_gate' },
         items: ['mushroom'],
         npcs: ['goblin'],
       },
       cave: {
-        name: '哥布林洞窟',
-        description: '岩洞深處，一名哥布林薩滿坐在骨頭堆成的寶座上，口中唸唸有詞。',
+        name: '幽暗洞窟',
+        biome: 'cave',
+        description: '岩洞深處，一名薩滿盤坐於骸骨寶座之上，低聲頌唱邪神「大惡魔」的咒文，黑霧繚繞。',
         exits: { north: null, south: 'hub', east: null, west: null },
         items: ['ancient_amulet'],
-        npcs: ['goblin_shaman'],
+        npcs: ['shaman'],
       },
       river: {
-        name: '河畔',
-        description: '清澈的河流緩緩流過，一隻渡鴉停在原木上盯著你看。',
+        name: '銀河河畔',
+        biome: 'river',
+        description: '銀色河水映照天光緩緩流動，一隻渡鴉棲於朽木上，冷眼注視著你。',
         exits: { north: null, south: null, east: null, west: 'hub' },
         items: ['fish'],
         npcs: ['raven'],
       },
       castle_gate: {
-        name: '城堡大門',
-        description: '厚重的石門敞開，一名衛兵筆直地站崗。北邊通向城堡內部。',
+        name: '王城大門',
+        biome: 'castle',
+        description: '雄偉的石門上鑲著王國徽記。一名騎士筆直站崗，腰間佩劍閃著冷光。門北通往王城內部。',
         exits: { north: 'castle_hall', south: 'hub', east: null, west: 'forest' },
         items: [],
         npcs: ['guard'],
       },
       castle_hall: {
-        name: '城堡大廳',
-        description: '莊嚴的大廳，牆上掛滿旗幟。北方寶座上，一隻巨龍正沉睡於黃金堆上。',
+        name: '王城大廳',
+        biome: 'castle',
+        description: '莊嚴的王城大廳，四壁懸掛著歷代王者的旗幟。北方深處，寶座之上盤踞著邪惡的巨龍。',
         exits: { north: 'treasure', south: 'castle_gate', east: null, west: null },
         items: ['sword', 'shield'],
         npcs: [],
       },
       treasure: {
-        name: '龍的寶藏',
-        description: '一座金山散發著漣漣漣的光，一隻龐大的巨龍盤踞其上，緩慢呼吸。',
+        name: '巨龍寶藏',
+        biome: 'treasure',
+        description: '一座金山散發著漣漣金光，龐大的巨龍盤踞其上，雙眼如餘燼般緩緩呼吸。王冠與鑽石埋於其中。',
         exits: { north: null, south: 'castle_hall', east: null, west: null },
         items: ['crown', 'diamond'],
         npcs: ['dragon'],
@@ -64,16 +71,16 @@ class MUD {
         attack: 3,
         defense: 1,
         loot: ['金幣'],
-        description: '一隻狡猾的小哥布林。',
+        description: '一隻狡猾的小哥布林，據說是大惡魔遺留的雜兵。',
       },
-      goblin_shaman: {
+      shaman: {
         name: '哥布林薩滿',
         hp: 30,
         maxHp: 30,
         attack: 6,
         defense: 2,
         loot: ['薩滿法杖', '金幣'],
-        description: '年老多經驗的哥布林薩滿，正低聲唸著邪惡咒語。',
+        description: '邪神大惡魔的祭司，正低聲頌唱詛咒，黑霧繚繞周身。',
       },
       raven: {
         name: '渡鴉',
@@ -82,16 +89,16 @@ class MUD {
         attack: 2,
         defense: 0,
         loot: ['渡鴉羽毛'],
-        description: '一隻靈巧的黑渡鴉。',
+        description: '一隻靈巧的黑渡鴉，傳言能傳遞訊息給遠方的王城。',
       },
       guard: {
-        name: '城堡衛兵',
+        name: '王城衛兵',
         hp: 50,
         maxHp: 50,
         attack: 8,
         defense: 4,
-        loot: ['護甲', '金幣'],
-        description: '身披閃亮鎧甲的專業士兵。',
+        loot: ['騎士護甲', '金幣'],
+        description: '身披閃亮鎧甲的王國騎士，正筆直地站崗。',
       },
       dragon: {
         name: '上古巨龍',
@@ -99,14 +106,15 @@ class MUD {
         maxHp: 100,
         attack: 15,
         defense: 8,
-        loot: ['王冠', '鑽石', '金幣'],
-        description: '龐大無比的龍，雙眼如餘燼般閃爍。',
+        loot: ['王者王冠', '純鑽', '金幣'],
+        description: '龐大無比的巨龍，雙眼如餘燼般閃爍。傳說它是邪神大惡魔麾下最後的守寶者。',
       },
     };
 
     this.commands = {
       look:    this.cmdLook,
       l:       this.cmdLook,
+      環顧:    this.cmdLook,
       north:   this.cmdMoveNorth,
       south:   this.cmdMoveSouth,
       east:    this.cmdMoveEast,
@@ -168,66 +176,50 @@ class MUD {
     lines.push(room.description);
     lines.push('');
 
-    // Show exits
+    // 顯示出入口
     const exitDir = Object.keys(room.exits).filter(d => room.exits[d]);
     const dirCN = { north: '北', south: '南', east: '東', west: '西' };
     lines.push(`出入口：${exitDir.map(d => dirCN[d] || d).join('、') || '無'}`);
 
-    // Show items on the floor
+    // 顯示地上的物品
     if (room.items.length) {
       lines.push(`你看到：${room.items.join('、')}`);
     }
 
-    // Show NPCs in the room
-    const npcsHere = room.npcs.map(id => this.npcs[id].name).join('、');
-    if (npcsHere) lines.push(`這裡還有：${npcsHere}`);
-
-    // Show other players
-    const otherPlayers = this.getPlayersInRoom(player.room, player.id);
-    if (otherPlayers.length) {
-      lines.push(`其他玩家：${otherPlayers.join('、')}`);
+    // 顯示房間內的 NPC
+    if (room.npcs.length) {
+      lines.push(`在附近：${room.npcs.map(id => this.npcs[id].name).join('、')}`);
     }
 
     return lines;
   }
 
-  cmdMoveNorth(player)  { return this.tryMove(player, 'north'); }
-  cmdMoveSouth(player)  { return this.tryMove(player, 'south'); }
-  cmdMoveEast(player)   { return this.tryMove(player, 'east'); }
-  cmdMoveWest(player)   { return this.tryMove(player, 'west'); }
+  cmdMoveNorth(player)  { return this.doMove(player, 'north'); }
+  cmdMoveSouth(player)  { return this.doMove(player, 'south'); }
+  cmdMoveEast(player)   { return this.doMove(player, 'east'); }
+  cmdMoveWest(player)   { return this.doMove(player, 'west'); }
 
   cmdGo(player, args) {
-    const alias = { '北': 'north', '南': 'south', '東': 'east', '西': 'west' };
-    let dir = (args || '').toLowerCase();
-    if (alias[dir]) dir = alias[dir];
-    if (['north','south','east','west'].includes(dir)) {
-      return this.tryMove(player, dir);
-    }
-    return [`你無法前往 "${args}"。`];
+    if (!args) return ['你想往哪個方向移動？'];
+    const map = { north: 'north', 北: 'north', south: 'south', 南: 'south', east: 'east', 東: 'east', west: 'west', 西: 'west' };
+    const dir = map[args];
+    if (!dir) return [`未知方向："${args}"。可往 north、south、east、west（北、南、東、西）。`];
+    return this.doMove(player, dir);
   }
 
-  tryMove(player, direction) {
+  doMove(player, dir) {
     const room = this.rooms[player.room];
-    const target = room.exits[direction];
-    if (!target) {
-      return [`這個方向走不通。`];
-    }
-
+    const target = room.exits[dir];
+    if (!target) return ['這個方向沒有出入口。'];
     player.room = target;
-    const newRoom = this.rooms[target];
-
-    const dirCN = { north: '向北', south: '向南', east: '向東', west: '向西' };
-    const lines = [`你${dirCN[direction]}來到 ${newRoom.name}。`];
-    lines.push(...this.cmdLook(player));
-    return lines;
-  }
-
-  cmdRecall(player) {
-    player.room = this.hubRoom;
-    const room = this.rooms[this.hubRoom];
-    const lines = [`你召喚水晶柱的力量，瞬間回到 ${room.name}。`];
-    lines.push(...this.cmdLook(player));
-    return lines;
+    const targetRoom = this.rooms[target];
+    return [
+      `你向${dir === 'north' ? '北' : dir === 'south' ? '南' : dir === 'east' ? '東' : '西'}移動。`,
+      '',
+      `你身在：${targetRoom.name}`,
+      targetRoom.description,
+      `出入口：${Object.keys(targetRoom.exits).filter(d => targetRoom.exits[d]).map(d => ({ north: '北', south: '南', east: '東', west: '西' })[d] || d).join('、') || '無'}`,
+    ];
   }
 
   cmdHit(player, args) {
@@ -266,16 +258,13 @@ class MUD {
     ];
 
     if (npc.hp <= 0) {
-      // Remove NPC from room
       room.npcs = room.npcs.filter(id => id !== npcId);
-      // Give loot
       if (npc.loot && npc.loot.length) {
         const lootMsg = `你獲得：${npc.loot.join('、')}`;
         lines.push(lootMsg);
         player.inventory.push(...npc.loot);
       }
     } else {
-      // NPC retaliates
       const npcDmg = Math.max(1, npc.attack - (player.defense || 0));
       player.hp -= npcDmg;
       lines.push(`${npc.name} 反擊，造成 ${npcDmg} 點傷害。`);
@@ -337,8 +326,8 @@ class MUD {
 
   cmdHelp(player) {
     return [
-      '=== MUD 指令清單 ===',
-      'look / l      - 查看四周',
+      '=== 萬王之王 MUD 指令清單 ===',
+      'look / l      - 環顧四周',
       'north/south/east/west（或 北/南/東/西） - 移動',
       'hit <目標>    - 攻擊目標',
       'inventory     - 查看背包',
@@ -346,7 +335,7 @@ class MUD {
       'drop <物品>   - 放下物品',
       'say <文字>    - 說句話',
       'who           - 查看同房間的玩家',
-      'heal          - 治癒（若有 potions）',
+      'heal          - 治癒（若有治癒 potions）',
       'status / s    - 查看自身狀態',
       'recall        - 召回到冒險者中心',
       'quit          - 離開遊戲',
@@ -368,6 +357,18 @@ class MUD {
       `位置：${this.rooms[player.room].name}`,
       `生命：${player.hp}/${player.maxHp}`,
       `攻擊：${player.attack}  防禦：${player.defense}`,
+    ];
+  }
+
+  cmdRecall(player) {
+    player.room = this.hubRoom;
+    const room = this.rooms[this.hubRoom];
+    return [
+      `你召喚了聖殿水晶柱的力量，回到了 ${room.name}。`,
+      '',
+      `你身在：${room.name}`,
+      room.description,
+      `出入口：${Object.keys(room.exits).filter(d => room.exits[d]).map(d => ({ north: '北', south: '南', east: '東', west: '西' })[d] || d).join('、') || '無'}`,
     ];
   }
 
