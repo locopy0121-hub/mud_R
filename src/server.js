@@ -37,7 +37,7 @@ const clientMap = new Map(); // playerId -> ws
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const playerId = url.searchParams.get('player') || uuidv4();
-  const playerName = url.searchParams.get('name') || 'Guest_' + playerId.slice(0, 4);
+  const playerName = url.searchParams.get('name') || '旅者_' + playerId.slice(0, 4);
 
   // 嘗試載入玩家
   db.loadPlayer(playerId).then(saved => {
@@ -53,11 +53,11 @@ wss.on('connection', (ws, req) => {
     clientMap.set(playerId, ws);
 
     // 發送歡迎訊息
-    const roomName = mud.rooms[player.room] ? mud.rooms[player.room].name : 'Village Square';
+    const roomName = mud.rooms[player.room] ? mud.rooms[player.room].name : '冒險者中心';
     const welcome = [
-      '=== Welcome to MUD ===',
-      `Hello, ${player.name}! You are in the ${roomName}.`,
-      'Type "help" for a list of commands.',
+      '=== 歡迎來到 MUD ===',
+      `你好，${player.name}！你現在身在 ${roomName}。`,
+      '輸入 "help" 查看指令清單。',
       '',
     ];
     welcome.forEach(line => ws.send(JSON.stringify({ text: line })));
@@ -75,20 +75,22 @@ wss.on('connection', (ws, req) => {
     });
 
     // 廣播給同房間的其他玩家
-    const cmd = input.split(' ')[0].toLowerCase();
-    if (['north','south','east','west','go','say'].includes(cmd)) {
-      const message = cmd === 'say'
-        ? ws.player.name + ' says: "' + input.split(' ').slice(1).join(' ') + '"'
-        : ws.player.name + ' moves ' + (cmd === 'go' ? input.split(' ')[1] : cmd);
-      const room = mud.rooms[ws.player.room];
-      const otherPlayers = room
-        ? room.npcs.filter(() => false) // noop to keep structure
-        : [];
-      // 廣播给其他玩家
+    const cmd = input.split(' ')[0];
+    if (['north','south','east','west','go','說','say'].includes(cmd.toLowerCase()) ||
+        ['北','南','東','西','移動','說'].includes(cmd)) {
+      const dirCN = { north: '向北', south: '向南', east: '向東', west: '向西', go: '移動', 移動: '移動', northCN: '向北' };
+      const parts = input.split(' ');
+      let msg;
+      if (cmd.toLowerCase() === 'say' || cmd === '說') {
+        msg = `${ws.player.name} 說："${parts.slice(1).join(' ')}"`;
+      } else {
+        const dirName = parts[1] ? (dirCN[parts[1]] || parts[1]) : '';
+        msg = `${ws.player.name} ${dirName || '移動了'}`;
+      }
       clientMap.forEach((client, clientId) => {
         if (clientId === ws.player.id || !client || client.readyState !== WebSocket.OPEN) return;
         if (client.player && client.player.room === ws.player.room) {
-          client.send(JSON.stringify({ text: message }));
+          client.send(JSON.stringify({ text: msg }));
         }
       });
     }
