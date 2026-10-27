@@ -95,7 +95,7 @@
   #status.connected { color: var(--gold); }
   #status.connected .dot { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
   #status.disconnected { color: var(--error); }
-  #status.disconnected .dot { background: void; background: var(--error); }
+  #status.disconnected .dot { background: var(--error); }
 
   #main {
     grid-area: main;
@@ -197,186 +197,232 @@
   #log .line { white-space: pre-wrap; word-break: break-word; }
   #log .line.command { color: var(--command); }
   #log .line.error { color: var(--error); }
-  #log .line.system { color: var(--gold); }
-  #log .line.room { color: var(--room); font-weight: bold; }
-  #log .line.npc { color: #ffcc88; }
+  #log .line.system { color: var(--muted); font-style: italic; }
+  #log .line.room { color: var(--room); font-weight: 600; }
+  #log .line.npc { color: var(--hp); }
 
-  /* ---- 側欄角色面板 ---- */
+  /* ---- 側邊欄 ---- */
   #sidebar {
     grid-area: sidebar;
-    background: var(--panel);
-    border-left: 1px solid var(--border);
-    padding: 14px;
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
+    padding: 12px;
+    overflow-y: auto;
+    min-height: 0;
   }
   .card {
-    background: var(--panel-2);
+    background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 12px;
   }
-  .card h2 {
+  .card h3 {
     font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--muted);
-    margin-bottom: 10px;
+    color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
   }
-  .avatar {
-    width: 56px; height: 56px;
-    border-radius: 10px;
-    background: radial-gradient(circle at 30% 30%, #f6d76b, #6b4f2a);
+  .char-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
     display: grid; place-items: center;
-    font-size: 30px;
+    background: radial-gradient(circle at 30% 30%, #7a5f3a, #3a2f1c);
+    font-size: 24px;
     margin-bottom: 8px;
+    border: 2px solid var(--gold-dim);
   }
+  .char-name { font-size: 16px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
   .stat-row {
     display: flex; justify-content: space-between;
-    font-size: 13px; margin-bottom: 6px;
+    font-size: 12px; color: var(--muted);
+    padding: 2px 0;
   }
-  .stat-row .label { color: var(--muted); }
   .stat-row .val { color: var(--text); font-weight: 600; }
-  #hpbar {
-    height: 8px; background: var(--hp-bg);
-    border-radius: 4px; overflow: hidden;
-    margin: 4px 0 8px;
+  .hp-bar {
+    height: 10px;
+    background: var(--hp-bg);
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 8px 0 4px;
+    border: 1px solid #4a2a2a;
   }
-  #hpfill { height: 100%; width: 100%; background: var(--hp); transition: width .3s; }
-
-  #input-bar {
-    grid-area: input;
-    display: flex;
-    background: linear-gradient(0deg, #0d1117, #141a2b);
-    border-top: 1px solid var(--border);
+  .hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff5f5f, #ff2a2a);
+    transition: width .4s ease;
+    box-shadow: 0 0 6px #ff2a2a inset;
   }
-  #prompt {
-    padding: 10px 14px;
-    color: var(--gold);
-    border-right: 1px solid var(--border);
-    font-weight: bold;
+  .quick-cmd {
+    display: flex; flex-wrap: wrap; gap: 6px;
   }
-  #input {
-    flex: 1;
-    background: transparent;
-    border: none;
+  .quick-cmd button {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
     color: var(--text);
-    font-family: inherit;
-    font-size: 15px;
-    padding: 10px 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all .15s;
+  }
+  .quick-cmd button:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 8px rgba(230,185,63,.3);
+  }
+  .quick-cmd button.danger { border-color: #5a3a3a; }
+  .quick-cmd button.danger:hover { border-color: var(--error); color: var(--error); box-shadow: 0 0 8px rgba(255,123,114,.3); }
+
+  /* ---- 輸入列 ---- */
+  #input-area {
+    grid-area: input;
+    background: var(--panel-2);
+    border-top: 2px solid var(--border);
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  #cmd-prefix {
+    color: var(--gold);
+    font-weight: bold;
+    padding: 0 6px;
+    font-family: monospace;
+  }
+  #cmd-input {
+    flex: 1;
+    background: #0a0d15;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 12px;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', monospace;
     outline: none;
   }
-  #input::placeholder { color: #4a5568; }
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+  #cmd-input:focus { border-color: var(--gold); box-shadow: 0 0 6px rgba(230,185,63,.3); }
 </style>
 </head>
 <body>
-<div id="header">
+
+<header id="header">
   <div class="brand">
-    <div class="logo">王</div>
+    <div class="logo">K</div>
     <div>
       <h1>萬王之王 MUD</h1>
-      <div class="sub">King of Kings - 亞特蘭狄斯王國冒險</div>
+      <div class="sub">亞特蘭狄斯王國冒險</div>
     </div>
   </div>
-  <span id="status" class="disconnected"><span class="dot"></span><span id="status-text">連線中…</span></span>
-</div>
+  <div id="status">
+    <div class="dot"></div>
+    <span id="status-text">連線中…</span>
+  </div>
+</header>
 
-<div id="main">
-  <div id="map-panel">
-    <h2>王國地圖</h2>
+<main id="main">
+  <section id="map-panel">
+    <h2>地圖</h2>
     <div id="map"></div>
-    <div id="legend">
-      <span class="chip" style="color:#e6b93f">▢ 冒險者中心</span>
-      <span class="chip" style="color:#7fd09a">▢ 森林</span>
-      <span class="chip" style="color:#a89fe0">▢ 洞窟</span>
-      <span class="chip" style="color:#7fb4e6">▢ 河畔</span>
-      <span class="chip" style="color:#c9c4e6">▢ 王城</span>
-      <span class="chip" style="color:#f0c060">▢ 寶藏</span>
+    <div id="legend"></div>
+  </section>
+
+  <section id="log">
+    <h2>冒險日誌</h2>
+    <div id="log-lines"></div>
+  </section>
+</main>
+
+<aside id="sidebar">
+  <div class="card">
+    <h3>🧝 角色狀態</h3>
+    <div class="char-avatar">🧝</div>
+    <div class="char-name" id="stat-name">--</div>
+    <div class="hp-bar"><div class="hp-fill" id="hpfill" style="width:100%"></div></div>
+    <div class="stat-row"><span>生命</span><span class="val" id="stat-hp">--</span></div>
+    <div class="stat-row"><span>攻擊</span><span class="val" id="stat-atk">--</span></div>
+    <div class="stat-row"><span>防禦</span><span class="val" id="stat-def">--</span></div>
+    <div class="stat-row"><span>地點</span><span class="val" id="stat-room">--</span></div>
+  </div>
+
+  <div class="card">
+    <h3>⚔️ 快捷指令</h3>
+    <div class="quick-cmd">
+      <button data-cmd="status">狀態</button>
+      <button data-cmd="look">環顧</button>
+      <button data-cmd="recall">召回</button>
+      <button data-cmd="inventory">揹包</button>
+      <button data-cmd="say 有人嗎？">喊話</button>
+      <button data-cmd="help">說明</button>
+      <button data-cmd="north">北</button>
+      <button data-cmd="south">南</button>
+      <button data-cmd="east">東</button>
+      <button data-cmd="west">西</button>
+      <button data-cmd="combat" class="danger">戰鬥</button>
     </div>
   </div>
-  <div id="log"><h2>冒險日誌</h2></div>
-</div>
+</aside>
 
-<div id="sidebar">
-  <div class="card">
-    <div class="avatar">🛡️</div>
-    <h2>角色狀態</h2>
-    <div class="stat-row"><span class="label">名字</span><span class="val" id="stat-name">-</span></div>
-    <div class="stat-row"><span class="label">位置</span><span class="val" id="stat-room">-</span></div>
-    <div class="stat-row"><span class="label">生命</span><span class="val" id="stat-hp">-</span></div>
-    <div id="hpbar"><div id="hpfill"></div></div>
-    <div class="stat-row"><span class="label">攻擊</span><span class="val" id="stat-atk">-</span></div>
-    <div class="stat-row"><span class="label">防禦</span><span class="val" id="stat-def">-</span></div>
-  </div>
-  <div class="card">
-    <h2>常用指令</h2>
-    <div class="stat-row"><span class="label">移動</span><span class="val">北 南 東 西</span></div>
-    <div class="stat-row"><span class="label">環顧</span><span class="val">look</span></div>
-    <div class="stat-row"><span class="label">攻擊</span><span class="val">hit &lt;目標&gt;</span></div>
-    <div class="stat-row"><span class="label">召回</span><span class="val">recall</span></div>
-    <div class="stat-row"><span class="label">狀態</span><span class="val">status</span></div>
-  </div>
-</div>
-
-<div id="input-bar">
-  <span id="prompt">❯</span>
-  <input type="text" id="input" placeholder="輸入指令…（help 查看完整清單）" autofocus autocomplete="off">
+<div id="input-area">
+  <span id="cmd-prefix">&gt;</span>
+  <input id="cmd-input" type="text" autocomplete="off" placeholder="輸入指令，例如：help、北、combat、recall…" />
 </div>
 
 <script>
-/* ===== 磁貼地圖：萬王之王 房間圖譜（靜態、玩家中心） =====
-   座標為 8x8 方格，每個房間一個格子；玩家所在格子置中。 */
+/* 房間座標（磁貼格）：hub 為中心 */
 const ROOMS = {
-  hub:         { name: '冒險者中心', x: 3, y: 3, biome: 'hub',      emoji: '🏛️' },
-  forest:      { name: '密語森林',   x: 3, y: 2, biome: 'forest',   emoji: '🌲' },
-  cave:        { name: '幽暗洞窟',   x: 2, y: 3, biome: 'cave',     emoji: '🦴' },
-  river:       { name: '銀河河畔',   x: 3, y: 4, biome: 'river',    emoji: '🌊' },
-  castle_gate: { name: '王城大門',   x: 4, y: 3, biome: 'castle',   emoji: '🏰' },
-  castle_hall: { name: '王城大廳',   x: 5, y: 3, biome: 'castle',   emoji: '👑' },
-  treasure:    { name: '巨龍寶藏',   x: 6, y: 3, biome: 'treasure', emoji: '🐉' },
+  hub:          { x: 3, y: 3, name: '冒險者中心', emoji: '🏛️', biome: 'hub' },
+  forest:       { x: 3, y: 2, name: '密語森林',   emoji: '🌲', biome: 'forest' },
+  cave:         { x: 2, y: 3, name: '幽暗洞窟',   emoji: '🕳️', biome: 'cave' },
+  river:        { x: 3, y: 4, name: '銀河河畔',   emoji: '🌊', biome: 'river' },
+  castle_gate:  { x: 4, y: 3, name: '王城大門',   emoji: '🏰', biome: 'castle' },
+  castle_hall:  { x: 5, y: 3, name: '王城大廳',   emoji: '👑', biome: 'castle' },
+  treasure:     { x: 6, y: 3, name: '巨龍寶藏',   emoji: '🐉', biome: 'treasure' },
 };
-// 中文名 -> 房間 key
 const ROOM_BY_NAME = {};
-Object.keys(ROOMS).forEach(k => { ROOM_BY_NAME[ROOMS[k].name] = k; });
-const TILE = 76; // 磁貼含間距
-const GAP = 4;
+Object.entries(ROOMS).forEach(([key, r]) => ROOM_BY_NAME[r.name] = key);
+
+const TILE = 72, GAP = 8;
+
+function printLine(text, cls='') {
+  const box = document.getElementById('log-lines');
+  const div = document.createElement('div');
+  div.className = 'line ' + cls;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  while (box.children.length > 400) box.removeChild(box.firstChild);
+}
+
+function setStatus(state, text) {
+  const el = document.getElementById('status');
+  el.className = state;
+  document.getElementById('status-text').textContent = text;
+}
 
 function getPlayerId() {
-  let id = localStorage.getItem('mud_player_id');
-  if (!id) {
-    id = 'player_' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem('mud_player_id', id);
-  }
+  let id = sessionStorage.getItem('mudPlayerId');
+  if (!id) { id = 'p_' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('mudPlayerId', id); }
   return id;
 }
 function getPlayerName() {
-  let name = localStorage.getItem('mud_player_name');
+  let name = sessionStorage.getItem('mudPlayerName');
   if (!name) {
-    name = prompt('輸入你的角色名字：') || '冒險者_' + getPlayerId().slice(-4);
-    localStorage.setItem('mud_player_name', name);
+    const pool = ['艾利安娜','托爾夫','塞琳','布蘭德','麗塔','芬恩','格蕾絲','奧登','希雅','盧西安'];
+    name = pool[Math.floor(Math.random() * pool.length)];
+    sessionStorage.setItem('mudPlayerName', name);
   }
   return name;
 }
 
-const log = document.getElementById('log');
-const input = document.getElementById('input');
-const statusEl = document.getElementById('status');
-const statusText = document.getElementById('status-text');
-let currentRoom = 'hub';
+document.querySelectorAll('.quick-cmd button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    sendCommand(btn.dataset.cmd);
+    input.focus();
+  });
+});
 
-function printLine(text, cls) {
-  const div = document.createElement('div');
-  div.className = 'line' + (cls ? ' ' + cls : '');
-  div.textContent = text;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-}
-function setStatus(cls, text) {
-  statusEl.className = cls;
+const input = document.getElementById('cmd-input');
+function statusText(text) {
+  const statusText = document.getElementById('status-text');
   statusText.textContent = text;
 }
 function setStat(id, val) {
