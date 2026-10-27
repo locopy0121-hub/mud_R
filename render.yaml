@@ -1,0 +1,9 @@
+{
+  "name": "mud-r",
+  "repo": "https://github.com/locopy0121-hub/mud_R.git",
+  "env": "node",
+  "buildCommand": "npm install --omit=dev",
+  "startCommand": "node src/server.js",
+  "healthCheckPath": "/health",
+  "autoDeploy": true
+}
