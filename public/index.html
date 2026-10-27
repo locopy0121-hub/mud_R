@@ -3,36 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MUD - 多人線上泥巴遊戲</title>
+<title>萬王之王 MUD - 線上泥巴遊戲</title>
 <style>
   :root {
-    --bg: #0a0e14;
+    --bg: #06080f;
     --panel: #0d1117;
     --panel-2: #161b22;
-    --border: #21262d;
-    --text: #c9d1d9;
+    --border: #2b3140;
+    --text: #d6dde8;
     --muted: #6e7681;
-    --accent: #39d353;
-    --accent-dim: #238636;
-    --command: #58a6ff;
+    --gold: #e6b93f;
+    --gold-dim: #5a4a1c;
+    --accent: #e6b93f;
+    --command: #7fb4ff;
     --error: #ff7b72;
     --room: #ffd866;
-    --hp: #ff7b72;
+    --hp: #ff5f5f;
     --hp-bg: #2d1b1b;
+    /* 生物群系色 */
+    --c-hub: #6b4f2a;
+    --c-hub-edge: #e6b93f;
+    --c-forest: #234d33;
+    --c-cave: #3a3550;
+    --c-river: #24455f;
+    --c-castle: #4a4560;
+    --c-treasure: #5a3d1c;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #141a2b 0%, transparent 60%),
+      var(--bg);
     color: var(--text);
-    font-family: 'Cascadia Code', 'Fira Code', 'Noto Sans TC', 'Microsoft JhengHei', Consolas, monospace;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', system-ui, monospace;
     font-size: 14px;
     display: grid;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 1fr 320px;
     grid-template-rows: auto 1fr auto;
     grid-template-areas:
       "header header"
-      "log sidebar"
+      "main sidebar"
       "input input";
     height: 100vh;
     overflow: hidden;
@@ -40,15 +51,15 @@
   @media (max-width: 760px) {
     body {
       grid-template-columns: 1fr;
-      grid-template-areas: "header" "log" "input";
+      grid-template-areas: "header" "main" "input";
     }
     #sidebar { display: none; }
   }
   #header {
     grid-area: header;
-    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    background: linear-gradient(180deg, #1a1f2e, #0d1117);
     padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--gold-dim);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -56,15 +67,23 @@
   }
   #header .brand { display: flex; align-items: center; gap: 10px; }
   #header .logo {
-    width: 30px; height: 30px;
+    width: 34px; height: 34px;
     display: grid; place-items: center;
-    background: var(--accent-dim);
-    border-radius: 7px;
+    background: radial-gradient(circle at 30% 30%, #f6d76b, #a5811f);
+    border-radius: 8px;
     font-weight: bold;
-    color: #fff;
-    font-size: 16px;
+    color: #2a1e04;
+    font-size: 18px;
+    box-shadow: 0 0 10px rgba(230,185,63,.4);
   }
-  #header h1 { font-size: 16px; color: var(--accent); font-weight: 700; letter-spacing: 0.5px; }
+  #header h1 {
+    font-size: 18px;
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 0 #000;
+  }
+  #header .sub { font-size: 11px; color: var(--muted); }
   #status {
     font-size: 12px;
     color: var(--muted);
@@ -72,29 +91,117 @@
     align-items: center;
     gap: 6px;
   }
-  #status .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #888;
-  }
-  #status.connected { color: var(--accent); }
-  #status.connected .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  #status .dot { width: 8px; height: 8px; border-radius: 50%; background: #888; }
+  #status.connected { color: var(--gold); }
+  #status.connected .dot { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
   #status.disconnected { color: var(--error); }
-  #status.disconnected .dot { background: var(--error); }
+  #status.disconnected .dot { background: void; background: var(--error); }
 
-  #log {
-    grid-area: log;
-    overflow-y: auto;
-    padding: 14px 16px;
-    line-height: 1.6;
-    background: var(--bg);
+  #main {
+    grid-area: main;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 10px;
+    padding: 12px;
+    min-height: 0;
   }
+  @media (max-width: 900px) {
+    #main { grid-template-columns: 1fr; grid-auto-rows: minmax(180px, auto); overflow-y: auto; }
+    #map-panel { order: 2; }
+  }
+
+  /* ---- 磁貼地圖 ---- */
+  #map-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  #map-panel h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted);
+  }
+  #map {
+    position: relative;
+    flex: 1;
+    overflow: auto;
+    border-radius: 8px;
+    background:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px),
+      #0a0d15;
+    background-size: 40px 40px, 40px 40px, auto;
+  }
+  .tile {
+    position: absolute;
+    width: 72px; height: 72px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 4px;
+    font-size: 11px;
+    color: #fff;
+    background: #1a2030;
+    border: 2px solid var(--border);
+    transition: box-shadow .3s;
+    line-height: 1.2;
+    overflow: hidden;
+  }
+  .tile .emoji { font-size: 22px; display: block; margin-bottom: 2px; }
+  .tile.current {
+    border-color: var(--gold);
+    box-shadow: 0 0 14px 3px rgba(230,185,63,.55);
+    z-index: 3;
+  }
+  .tile.current .you {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    background: rgba(230,185,63,.18);
+  }
+  .tile.current .you span {
+    font-size: 26px;
+    filter: drop-shadow(0 0 4px #fff);
+  }
+  .tile.hub      { background: linear-gradient(160deg,#7a5a30,#3a2c17); border-color: #8a6a34; }
+  .tile.forest   { background: linear-gradient(160deg,#2f6b44,#15301f); }
+  .tile.cave     { background: linear-gradient(160deg,#4a4470,#241f38); }
+  .tile.river    { background: linear-gradient(160deg,#2f6b9a,#16324a); }
+  .tile.castle   { background: linear-gradient(160deg,#5f5a7e,#2b2840); }
+  .tile.treasure { background: linear-gradient(160deg,#8a5f24,#3a2a10); border-color: #a5811f; }
+
+  #legend { display: flex; flex-wrap: wrap; gap: 6px; }
+  #legend .chip {
+    font-size: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 3px 7px;
+    border-radius: 6px;
+  }
+
+  /* ---- 訊息日誌 ---- */
+  #log {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    overflow-y: auto;
+    line-height: 1.7;
+  }
+  #log h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
   #log .line { white-space: pre-wrap; word-break: break-word; }
   #log .line.command { color: var(--command); }
   #log .line.error { color: var(--error); }
-  #log .line.system { color: var(--accent); }
+  #log .line.system { color: var(--gold); }
   #log .line.room { color: var(--room); font-weight: bold; }
-  #log .line.npc { color: #ff9; }
+  #log .line.npc { color: #ffcc88; }
 
+  /* ---- 側欄角色面板 ---- */
   #sidebar {
     grid-area: sidebar;
     background: var(--panel);
@@ -112,67 +219,40 @@
     padding: 12px;
   }
   .card h2 {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
     color: var(--muted);
     margin-bottom: 10px;
   }
+  .avatar {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    background: radial-gradient(circle at 30% 30%, #f6d76b, #6b4f2a);
+    display: grid; place-items: center;
+    font-size: 30px;
+    margin-bottom: 8px;
+  }
   .stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    margin-bottom: 6px;
+    display: flex; justify-content: space-between;
+    font-size: 13px; margin-bottom: 6px;
   }
   .stat-row .label { color: var(--muted); }
   .stat-row .val { color: var(--text); font-weight: 600; }
   #hpbar {
-    height: 8px;
-    background: var(--hp-bg);
-    border-radius: 4px;
-    overflow: hidden;
+    height: 8px; background: var(--hp-bg);
+    border-radius: 4px; overflow: hidden;
     margin: 4px 0 8px;
   }
-  #hpfill { height: 100%; width: 100%; background: var(--hp); transition: width 0.3s; }
-  #map {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-areas:
-      "cave hub forest"
-      "castle hub river"
-      "cc hall treasure";
-    gap: 4px;
-  }
-  #map .node {
-    aspect-ratio: 1;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    display: grid;
-    place-items: center;
-    font-size: 10px;
-    color: var(--muted);
-    text-align: center;
-    padding: 2px;
-  }
-  #map .node.current {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 700;
-    box-shadow: 0 0 8px var(--accent-dim);
-  }
-  #map .node.legend { border-style: dashed; color: var(--muted); }
+  #hpfill { height: 100%; width: 100%; background: var(--hp); transition: width .3s; }
 
   #input-bar {
     grid-area: input;
     display: flex;
-    background: var(--panel);
+    background: linear-gradient(0deg, #0d1117, #141a2b);
     border-top: 1px solid var(--border);
   }
   #prompt {
     padding: 10px 14px;
-    color: var(--accent);
+    color: var(--gold);
     border-right: 1px solid var(--border);
     font-weight: bold;
   }
@@ -182,11 +262,11 @@
     border: none;
     color: var(--text);
     font-family: inherit;
-    font-size: 14px;
+    font-size: 15px;
     padding: 10px 8px;
     outline: none;
   }
-  #input::placeholder { color: #3d444d; }
+  #input::placeholder { color: #4a5568; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
@@ -196,61 +276,74 @@
 <body>
 <div id="header">
   <div class="brand">
-    <div class="logo">M</div>
-    <h1>MUD 線上泥巴遊戲</h1>
+    <div class="logo">王</div>
+    <div>
+      <h1>萬王之王 MUD</h1>
+      <div class="sub">King of Kings - 亞特蘭狄斯王國冒險</div>
+    </div>
   </div>
   <span id="status" class="disconnected"><span class="dot"></span><span id="status-text">連線中…</span></span>
 </div>
 
-<div id="log"></div>
+<div id="main">
+  <div id="map-panel">
+    <h2>王國地圖</h2>
+    <div id="map"></div>
+    <div id="legend">
+      <span class="chip" style="color:#e6b93f">▢ 冒險者中心</span>
+      <span class="chip" style="color:#7fd09a">▢ 森林</span>
+      <span class="chip" style="color:#a89fe0">▢ 洞窟</span>
+      <span class="chip" style="color:#7fb4e6">▢ 河畔</span>
+      <span class="chip" style="color:#c9c4e6">▢ 王城</span>
+      <span class="chip" style="color:#f0c060">▢ 寶藏</span>
+    </div>
+  </div>
+  <div id="log"><h2>冒險日誌</h2></div>
+</div>
 
 <div id="sidebar">
   <div class="card">
+    <div class="avatar">🛡️</div>
     <h2>角色狀態</h2>
+    <div class="stat-row"><span class="label">名字</span><span class="val" id="stat-name">-</span></div>
+    <div class="stat-row"><span class="label">位置</span><span class="val" id="stat-room">-</span></div>
     <div class="stat-row"><span class="label">生命</span><span class="val" id="stat-hp">-</span></div>
     <div id="hpbar"><div id="hpfill"></div></div>
     <div class="stat-row"><span class="label">攻擊</span><span class="val" id="stat-atk">-</span></div>
     <div class="stat-row"><span class="label">防禦</span><span class="val" id="stat-def">-</span></div>
-    <div class="stat-row"><span class="label">位置</span><span class="val" id="stat-room">冒險者中心</span></div>
-  </div>
-  <div class="card">
-    <h2>小地圖</h2>
-    <div id="map">
-      <div class="node" data-room="cave" style="grid-area: cave;">洞窟</div>
-      <div class="node current" data-room="hub" style="grid-area: hub;">冒險者中心</div>
-      <div class="node" data-room="forest" style="grid-area: forest;">森林</div>
-      <div class="node" data-room="castle_gate" style="grid-area: castle;">城門</div>
-      <div class="node" data-room="river" style="grid-area: river;">河畔</div>
-      <div class="node legend" style="grid-area: cc;">龍</div>
-      <div class="node" data-room="castle_hall" style="grid-area: hall;">城堡大廳</div>
-      <div class="node" data-room="treasure" style="grid-area: treasure;">龍的寶藏</div>
-    </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5;">
-      中央為冒險者中心，四向皆可出發。<br>
-      <span style="border:1px dashed var(--muted);border-radius:4px;padding:0 4px;">虛線</span> = 終點（無出口）
-    </div>
   </div>
   <div class="card">
     <h2>常用指令</h2>
-    <div class="stat-row"><span class="label">look / 看</span><span class="val">看四周</span></div>
-    <div class="stat-row"><span class="label">北 南 東 西</span><span class="val">移動</span></div>
-    <div class="stat-row"><span class="label">hit / 攻擊</span><span class="val">攻擊目標</span></div>
-    <div class="stat-row"><span class="label">say / 說</span><span class="val">說聲</span></div>
-    <div class="stat-row"><span class="label">status / 狀態</span><span class="val">自身狀態</span></div>
-    <div class="stat-row"><span class="label">recall / 召回</span><span class="val">回到中心</span></div>
+    <div class="stat-row"><span class="label">移動</span><span class="val">北 南 東 西</span></div>
+    <div class="stat-row"><span class="label">環顧</span><span class="val">look</span></div>
+    <div class="stat-row"><span class="label">攻擊</span><span class="val">hit &lt;目標&gt;</span></div>
+    <div class="stat-row"><span class="label">召回</span><span class="val">recall</span></div>
+    <div class="stat-row"><span class="label">狀態</span><span class="val">status</span></div>
   </div>
 </div>
 
 <div id="input-bar">
-  <span id="prompt">&gt;</span>
-  <input type="text" id="input" placeholder="輸入指令…（help 看清單）" autofocus autocomplete="off">
+  <span id="prompt">❯</span>
+  <input type="text" id="input" placeholder="輸入指令…（help 查看完整清單）" autofocus autocomplete="off">
 </div>
 
 <script>
-const log = document.getElementById('log');
-const input = document.getElementById('input');
-const statusEl = document.getElementById('status');
-const statusText = document.getElementById('status-text');
+/* ===== 磁貼地圖：萬王之王 房間圖譜（靜態、玩家中心） =====
+   座標為 8x8 方格，每個房間一個格子；玩家所在格子置中。 */
+const ROOMS = {
+  hub:         { name: '冒險者中心', x: 3, y: 3, biome: 'hub',      emoji: '🏛️' },
+  forest:      { name: '密語森林',   x: 3, y: 2, biome: 'forest',   emoji: '🌲' },
+  cave:        { name: '幽暗洞窟',   x: 2, y: 3, biome: 'cave',     emoji: '🦴' },
+  river:       { name: '銀河河畔',   x: 3, y: 4, biome: 'river',    emoji: '🌊' },
+  castle_gate: { name: '王城大門',   x: 4, y: 3, biome: 'castle',   emoji: '🏰' },
+  castle_hall: { name: '王城大廳',   x: 5, y: 3, biome: 'castle',   emoji: '👑' },
+  treasure:    { name: '巨龍寶藏',   x: 6, y: 3, biome: 'treasure', emoji: '🐉' },
+};
+// 中文名 -> 房間 key
+const ROOM_BY_NAME = {};
+Object.keys(ROOMS).forEach(k => { ROOM_BY_NAME[ROOMS[k].name] = k; });
+const TILE = 76; // 磁貼含間距
+const GAP = 4;
 
 function getPlayerId() {
   let id = localStorage.getItem('mud_player_id');
@@ -260,7 +353,6 @@ function getPlayerId() {
   }
   return id;
 }
-
 function getPlayerName() {
   let name = localStorage.getItem('mud_player_name');
   if (!name) {
@@ -270,6 +362,12 @@ function getPlayerName() {
   return name;
 }
 
+const log = document.getElementById('log');
+const input = document.getElementById('input');
+const statusEl = document.getElementById('status');
+const statusText = document.getElementById('status-text');
+let currentRoom = 'hub';
+
 function printLine(text, cls) {
   const div = document.createElement('div');
   div.className = 'line' + (cls ? ' ' + cls : '');
@@ -277,37 +375,76 @@ function printLine(text, cls) {
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
-
 function setStatus(cls, text) {
   statusEl.className = cls;
   statusText.textContent = text;
 }
-
 function setStat(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
 }
 
-// 房間名稱 -> 小地圖 key
-const roomToKey = {
-  '冒險者中心': 'hub',
-  '黑暗森林': 'forest',
-  '哥布林洞窟': 'cave',
-  '河畔': 'river',
-  '城堡大門': 'castle_gate',
-  '城堡大廳': 'castle_hall',
-  '龍的寶藏': 'treasure',
-};
+/* 建立磁貼 */
+const mapEl = document.getElementById('map');
+function buildTiles() {
+  mapEl.innerHTML = '';
+  const pad = 14;
+  Object.entries(ROOMS).forEach(([key, r]) => {
+    const t = document.createElement('div');
+    t.className = 'tile ' + r.biome;
+    t.dataset.room = key;
+    t.style.width = TILE + 'px';
+    t.style.height = TILE + 'px';
+    // 中心點定位，之後再整體平移使玩家中心
+    t.style.left = (r.x * (TILE + GAP) + pad) + 'px';
+    t.style.top = (r.y * (TILE + GAP) + pad) + 'px';
+    t.innerHTML = `<div class="emoji">${r.emoji}</div>${r.name}`;
+    mapEl.appendChild(t);
+  });
+}
+buildTiles();
 
-function highlightRoom(roomName) {
-  const key = roomToKey[roomName] || (roomName || '').toLowerCase();
-  document.querySelectorAll('#map .node.current').forEach(n => n.classList.remove('current'));
-  const el = document.querySelector('#map .node[data-room="' + key + '"]');
-  if (el) el.classList.add('current');
+function centerOn(roomKey) {
+  currentRoom = roomKey;
+  const r = ROOMS[roomKey];
+  if (!r) return;
+  // 磁貼中心置中
+  const mapW = mapEl.clientWidth;
+  const mapH = mapEl.clientHeight;
+  const pad = 14;
+  const tileCX = r.x * (TILE + GAP) + pad + TILE / 2;
+  const tileCY = r.y * (TILE + GAP) + pad + TILE / 2;
+  mapEl.scrollTo({
+    left: tileCX - mapW / 2,
+    top: tileCY - mapH / 2,
+    behavior: 'smooth'
+  });
+  document.querySelectorAll('.tile.current').forEach(t => {
+    t.classList.remove('current');
+    const you = t.querySelector('.you');
+    if (you) you.remove();
+  });
+  const el = document.querySelector('.tile[data-room="' + roomKey + '"]');
+  if (el) {
+    el.classList.add('current');
+    const you = document.createElement('div');
+    you.className = 'you';
+    you.innerHTML = '<span>🧝</span>';
+    el.appendChild(you);
+  }
+}
+
+function roomKeyFromName(name) {
+  if (!name) return null;
+  if (ROOM_BY_NAME[name]) return ROOM_BY_NAME[name];
+  // 後端可能直接傳 key
+  if (ROOMS[name]) return name;
+  return null;
 }
 
 const playerId = getPlayerId();
 const playerName = getPlayerName();
+setStat('stat-name', playerName);
 
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const wsUrl = protocol + '//' + window.location.host + '/ws?player=' + playerId + '&name=' + encodeURIComponent(playerName);
@@ -323,8 +460,8 @@ function connect() {
   ws.onopen = () => {
     setStatus('connected', '已連線為 ' + playerName);
     reconnectAttempts = 0;
-    printLine('=== 已連線 ===', 'system');
-    printLine('你已經進入遊戲。輸入 "help" 開始冒險。', 'system');
+    printLine('=== 歡迎來到萬王之王 MUD ===', 'system');
+    printLine('你已身在冒險者中心。輸入 "help" 開始冒險。', 'system');
     input.focus();
   };
 
@@ -336,14 +473,15 @@ function connect() {
       lines.forEach(line => {
         let cls = '';
         const l = line;
-        // 狀態輸出：生命：cur/max、攻擊：A、防禦：D
+        // 狀態輸出
         const hpMatch = l.match(/生命：\s*(\d+)\s*\/\s*(\d+)/);
         const atkMatch = l.match(/攻擊：\s*(\d+)/);
         const defMatch = l.match(/防禦：\s*(\d+)/);
         if (hpMatch) {
           const cur = parseInt(hpMatch[1], 10), max = parseInt(hpMatch[2], 10);
           setStat('stat-hp', cur + ' / ' + max);
-          document.getElementById('hpfill').style.width = Math.max(0, Math.min(100, max ? (cur / max) * 100 : 0)) + '%';
+          document.getElementById('hpfill').style.width =
+            Math.max(0, Math.min(100, max ? (cur / max) * 100 : 0)) + '%';
           if (atkMatch) setStat('stat-atk', atkMatch[1]);
           if (defMatch) setStat('stat-def', defMatch[1]);
           cls = 'system';
@@ -352,21 +490,22 @@ function connect() {
           if (defMatch) setStat('stat-def', defMatch[1]);
           cls = 'system';
         } else if (l.startsWith('你身在：')) {
-          const room = l.replace(/^你身在：\s*/, '').trim();
-          setStat('stat-room', room);
-          highlightRoom(room);
+          const roomName = l.replace(/^你身在：\s*/, '').trim();
+          setStat('stat-room', roomName);
+          centerOn(roomKeyFromName(roomName) || 'hub');
           cls = 'room';
         } else if (l.startsWith('位置：')) {
-          const room = l.replace(/^位置：\s*/, '').trim();
-          setStat('stat-room', room);
-          highlightRoom(room);
+          const roomName = l.replace(/^位置：\s*/, '').trim();
+          setStat('stat-room', roomName);
+          centerOn(roomKeyFromName(roomName) || 'hub');
           cls = 'system';
         } else if (l.startsWith('未知指令')) {
           cls = 'error';
-        } else if (/(哥布林|薩滿|渡鴉|衛兵|巨龍)/.test(l) && (l.includes('受到') || l.includes('生命') || l.includes('打倒'))) {
+        } else if (/(哥布林|薩滿|渡鴉|衛兵|巨龍)/.test(l) &&
+                   (l.includes('造成') || l.includes('生命') || l.includes('打倒') || l.includes('反擊'))) {
           cls = 'npc';
         }
-        printLine(line, cls);
+        printLine(l, cls);
       });
     }
   };
@@ -379,16 +518,13 @@ function connect() {
       setTimeout(connect, 2000 * reconnectAttempts);
     }
   };
-
-  ws.onerror = () => {
-    setStatus('disconnected', '連線錯誤');
-  };
+  ws.onerror = () => setStatus('disconnected', '連線錯誤');
 }
 
 function sendCommand(cmd) {
   const text = cmd.trim();
   if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-  printLine('&gt; ' + text, 'command');
+  printLine('> ' + text, 'command');
   ws.send(text);
   history.push(text);
   historyIndex = history.length;
@@ -413,8 +549,7 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
-// 初始位置：冒險者中心
-highlightRoom('冒險者中心');
+centerOn('hub');
 connect();
 </script>
 </body>
