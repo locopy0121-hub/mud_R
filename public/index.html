@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUD - Multi-User Dungeon</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #c0c0c0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  #header {
+    background: #111;
+    padding: 8px 12px;
+    border-bottom: 1px solid #222;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #header h1 { font-size: 16px; color: #0f0; font-weight: bold; }
+  #status { font-size: 12px; color: #666; }
+  #status.connected { color: #0f0; }
+  #status.disconnected { color: #f44; }
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    line-height: 1.6;
+  }
+  #log .line { white-space: pre-wrap; word-break: break-word; }
+  #log .line.command { color: #0af; }
+  #log .line.error { color: #f44; }
+  #log .line.system { color: #0f0; }
+  #log .line.room { color: #ff8; font-weight: bold; }
+  #input-bar {
+    display: flex;
+    background: #111;
+    border-top: 1px solid #222;
+  }
+  #prompt {
+    padding: 8px 12px;
+    color: #0f0;
+    border-right: 1px solid #222;
+  }
+  #input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #c0c0c0;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px;
+    outline: none;
+  }
+  #input::placeholder { color: #333; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #333; }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>&gt; MUD</h1>
+  <span id="status" class="disconnected">Connecting...</span>
+</div>
+<div id="log"></div>
+<div id="input-bar">
+  <span id="prompt">&gt;</span>
+  <input type="text" id="input" placeholder="Type a command... (help for list)" autofocus autocomplete="off">
+</div>
+<script>
+const log = document.getElementById('log');
+const input = document.getElementById('input');
+const statusEl = document.getElementById('status');
+
+function getPlayerId() {
+  let id = localStorage.getItem('mud_player_id');
+  if (!id) {
+    id = 'player_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('mud_player_id', id);
+  }
+  return id;
+}
+
+function getPlayerName() {
+  let name = localStorage.getItem('mud_player_name');
+  if (!name) {
+    name = prompt('Enter your character name:') || 'Player_' + getPlayerId().slice(-4);
+    localStorage.setItem('mud_player_name', name);
+  }
+  return name;
+}
+
+function printLine(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'line' + (cls ? ' ' + cls : '');
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+const playerId = getPlayerId();
+const playerName = getPlayerName();
+
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const wsUrl = protocol + '//' + window.location.host + '/ws?player=' + playerId + '&name=' + encodeURIComponent(playerName);
+
+let ws = null;
+let reconnectAttempts = 0;
+
+function connect() {
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    statusEl.textContent = 'Connected as ' + playerName;
+    statusEl.className = 'connected';
+    reconnectAttempts = 0;
+    printLine('=== Connected ===', 'system');
+    printLine('You are now in the game. Type "help" to start.', 'system');
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.text) {
+        const lines = data.text.split('\n');
+        lines.forEach(line => {
+          const cls = line.startsWith('You are in:') ? 'room' :
+                      line.startsWith('Unknown command') ? 'error' : '';
+          printLine(line, cls);
+        });
+      }
+    } catch (e) {
+      printLine(event.data, '');
+    }
+  };
+
+  ws.onclose = () => {
+    statusEl.textContent = 'Disconnected';
+    statusEl.className = 'disconnected';
+    if (reconnectAttempts < 5) {
+      reconnectAttempts++;
+      printLine('Connection lost. Reconnecting... (' + reconnectAttempts + ')', 'error');
+      setTimeout(connect, 2000 * reconnectAttempts);
+    }
+  };
+
+  ws.onerror = () => {
+    statusEl.textContent = 'Connection error';
+    statusEl.className = 'disconnected';
+  };
+}
+
+function sendCommand(cmd) {
+  const text = cmd.trim();
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  printLine('&gt; ' + text, 'command');
+  ws.send(text);
+}
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    sendCommand(input.value);
+    input.value = '';
+  }
+});
+
+connect();
+</script>
+</body>
+</html>
