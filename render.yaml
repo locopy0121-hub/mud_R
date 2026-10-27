@@ -1,9 +1,15 @@
-{
-  "name": "mud-r",
-  "repo": "https://github.com/locopy0121-hub/mud_R.git",
-  "env": "node",
-  "buildCommand": "npm install --omit=dev",
-  "startCommand": "node src/server.js",
-  "healthCheckPath": "/health",
-  "autoDeploy": true
-}
+databases:
+  - name: mud-r-db
+    plan: free
+
+services:
+  - type: web
+    name: mud-r
+    runtime: node
+    plan: free
+    repo: https://github.com/locopy0121-hub/mud_R.git
+    branch: main
+    buildCommand: npm install --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    autoDeploy: true
