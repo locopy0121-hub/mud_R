@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MUD - Multi-User Dungeon</title>
+<title>MUD - 多人線上泥巴遊戲</title>
 <style>
   :root {
     --bg: #0a0e14;
@@ -25,7 +25,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-family: 'Cascadia Code', 'Fira Code', 'Noto Sans TC', 'Microsoft JhengHei', Consolas, monospace;
     font-size: 14px;
     display: grid;
     grid-template-columns: 1fr 300px;
@@ -137,6 +137,10 @@
   #map {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+      "cave hub forest"
+      "castle hub river"
+      "cc hall treasure";
     gap: 4px;
   }
   #map .node {
@@ -158,7 +162,7 @@
     font-weight: 700;
     box-shadow: 0 0 8px var(--accent-dim);
   }
-  #map .node.legend { border-style: dashed; }
+  #map .node.legend { border-style: dashed; color: var(--muted); }
 
   #input-bar {
     grid-area: input;
@@ -193,9 +197,9 @@
 <div id="header">
   <div class="brand">
     <div class="logo">M</div>
-    <h1>MUD</h1>
+    <h1>MUD 線上泥巴遊戲</h1>
   </div>
-  <span id="status" class="disconnected"><span class="dot"></span><span id="status-text">Connecting...</span></span>
+  <span id="status" class="disconnected"><span class="dot"></span><span id="status-text">連線中…</span></span>
 </div>
 
 <div id="log"></div>
@@ -203,43 +207,43 @@
 <div id="sidebar">
   <div class="card">
     <h2>角色狀態</h2>
-    <div class="stat-row"><span class="label">生命 HP</span><span class="val" id="stat-hp">-</span></div>
+    <div class="stat-row"><span class="label">生命</span><span class="val" id="stat-hp">-</span></div>
     <div id="hpbar"><div id="hpfill"></div></div>
     <div class="stat-row"><span class="label">攻擊</span><span class="val" id="stat-atk">-</span></div>
     <div class="stat-row"><span class="label">防禦</span><span class="val" id="stat-def">-</span></div>
-    <div class="stat-row"><span class="label">位置</span><span class="val" id="stat-room">-</span></div>
+    <div class="stat-row"><span class="label">位置</span><span class="val" id="stat-room">冒險者中心</span></div>
   </div>
   <div class="card">
     <h2>小地圖</h2>
     <div id="map">
-      <div class="node legend">森林</div>
-      <div class="node" data-room="forest">森林</div>
-      <div class="node legend">寶藏</div>
-      <div class="node" data-room="village">村莊</div>
-      <div class="node" data-room="cave">山洞</div>
-      <div class="node" data-room="treasure">寶藏</div>
-      <div class="node legend">河邊</div>
-      <div class="node" data-room="river">河邊</div>
-      <div class="node legend">城堡</div>
-      <div class="node legend">守衛</div>
-      <div class="node" data-room="castle">城堡</div>
-      <div class="node legend">龍</div>
+      <div class="node" data-room="cave" style="grid-area: cave;">洞窟</div>
+      <div class="node current" data-room="hub" style="grid-area: hub;">冒險者中心</div>
+      <div class="node" data-room="forest" style="grid-area: forest;">森林</div>
+      <div class="node" data-room="castle_gate" style="grid-area: castle;">城門</div>
+      <div class="node" data-room="river" style="grid-area: river;">河畔</div>
+      <div class="node legend" style="grid-area: cc;">龍</div>
+      <div class="node" data-room="castle_hall" style="grid-area: hall;">城堡大廳</div>
+      <div class="node" data-room="treasure" style="grid-area: treasure;">龍的寶藏</div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5;">
+      中央為冒險者中心，四向皆可出發。<br>
+      <span style="border:1px dashed var(--muted);border-radius:4px;padding:0 4px;">虛線</span> = 終點（無出口）
     </div>
   </div>
   <div class="card">
     <h2>常用指令</h2>
-    <div class="stat-row"><span class="label">look</span><span class="val">看四周</span></div>
-    <div class="stat-row"><span class="label">go</span><span class="val">移動</span></div>
-    <div class="stat-row"><span class="label">hit</span><span class="val">攻擊</span></div>
-    <div class="stat-row"><span class="label">say</span><span class="val">說聲</span></div>
-    <div class="stat-row"><span class="label">who</span><span class="val">誰在線上</span></div>
-    <div class="stat-row"><span class="label">status</span><span class="val">自己的狀態</span></div>
+    <div class="stat-row"><span class="label">look / 看</span><span class="val">看四周</span></div>
+    <div class="stat-row"><span class="label">北 南 東 西</span><span class="val">移動</span></div>
+    <div class="stat-row"><span class="label">hit / 攻擊</span><span class="val">攻擊目標</span></div>
+    <div class="stat-row"><span class="label">say / 說</span><span class="val">說聲</span></div>
+    <div class="stat-row"><span class="label">status / 狀態</span><span class="val">自身狀態</span></div>
+    <div class="stat-row"><span class="label">recall / 召回</span><span class="val">回到中心</span></div>
   </div>
 </div>
 
 <div id="input-bar">
   <span id="prompt">&gt;</span>
-  <input type="text" id="input" placeholder="輸入指令... (help 看清單)" autofocus autocomplete="off">
+  <input type="text" id="input" placeholder="輸入指令…（help 看清單）" autofocus autocomplete="off">
 </div>
 
 <script>
@@ -260,7 +264,7 @@ function getPlayerId() {
 function getPlayerName() {
   let name = localStorage.getItem('mud_player_name');
   if (!name) {
-    name = prompt('輸入你的角色名字:') || 'Player_' + getPlayerId().slice(-4);
+    name = prompt('輸入你的角色名字：') || '冒險者_' + getPlayerId().slice(-4);
     localStorage.setItem('mud_player_name', name);
   }
   return name;
@@ -284,8 +288,20 @@ function setStat(id, val) {
   if (el) el.textContent = val;
 }
 
-function highlightRoom(name) {
-  const key = (name || '').toLowerCase();
+// 房間名稱 -> 小地圖 key
+const roomToKey = {
+  '冒險者中心': 'hub',
+  '黑暗森林': 'forest',
+  '哥布林洞窟': 'cave',
+  '河畔': 'river',
+  '城堡大門': 'castle_gate',
+  '城堡大廳': 'castle_hall',
+  '龍的寶藏': 'treasure',
+};
+
+function highlightRoom(roomName) {
+  const key = roomToKey[roomName] || (roomName || '').toLowerCase();
+  document.querySelectorAll('#map .node.current').forEach(n => n.classList.remove('current'));
   const el = document.querySelector('#map .node[data-room="' + key + '"]');
   if (el) el.classList.add('current');
 }
@@ -305,10 +321,10 @@ function connect() {
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    setStatus('connected', 'Connected as ' + playerName);
+    setStatus('connected', '已連線為 ' + playerName);
     reconnectAttempts = 0;
-    printLine('=== Connected ===', 'system');
-    printLine('You are now in the game. Type "help" to start.', 'system');
+    printLine('=== 已連線 ===', 'system');
+    printLine('你已經進入遊戲。輸入 "help" 開始冒險。', 'system');
     input.focus();
   };
 
@@ -318,28 +334,36 @@ function connect() {
     if (data.text) {
       const lines = data.text.split('\n');
       lines.forEach(line => {
-        const l = line.toLowerCase();
         let cls = '';
-        if (l.includes('hp:') || l.includes('attack:') || l.includes('defense:')) {
-          const m = l.match(/hp:\s*(\d+)\s*\/\s*(\d+)/);
-          if (m) {
-            const cur = parseInt(m[1], 10), max = parseInt(m[2], 10);
-            setStat('stat-hp', cur + ' / ' + max);
-            document.getElementById('hpfill').style.width = Math.max(0, Math.min(100, (cur / max) * 100)) + '%';
-          }
-          const atk = l.match(/attack:\s*(\d+)/);
-          if (atk) setStat('stat-atk', atk[1]);
-          const def = l.match(/defense:\s*(\d+)/);
-          if (def) setStat('stat-def', def[1]);
+        const l = line;
+        // 狀態輸出：生命：cur/max、攻擊：A、防禦：D
+        const hpMatch = l.match(/生命：\s*(\d+)\s*\/\s*(\d+)/);
+        const atkMatch = l.match(/攻擊：\s*(\d+)/);
+        const defMatch = l.match(/防禦：\s*(\d+)/);
+        if (hpMatch) {
+          const cur = parseInt(hpMatch[1], 10), max = parseInt(hpMatch[2], 10);
+          setStat('stat-hp', cur + ' / ' + max);
+          document.getElementById('hpfill').style.width = Math.max(0, Math.min(100, max ? (cur / max) * 100 : 0)) + '%';
+          if (atkMatch) setStat('stat-atk', atkMatch[1]);
+          if (defMatch) setStat('stat-def', defMatch[1]);
           cls = 'system';
-        } else if (l.startsWith('you are in:')) {
-          const room = l.replace(/you are in:\s*/i, '').trim();
+        } else if (atkMatch || defMatch) {
+          if (atkMatch) setStat('stat-atk', atkMatch[1]);
+          if (defMatch) setStat('stat-def', defMatch[1]);
+          cls = 'system';
+        } else if (l.startsWith('你身在：')) {
+          const room = l.replace(/^你身在：\s*/, '').trim();
           setStat('stat-room', room);
-          highlightRoom(room.split(' ')[0]);
+          highlightRoom(room);
           cls = 'room';
-        } else if (l.startsWith('unknown command')) {
+        } else if (l.startsWith('位置：')) {
+          const room = l.replace(/^位置：\s*/, '').trim();
+          setStat('stat-room', room);
+          highlightRoom(room);
+          cls = 'system';
+        } else if (l.startsWith('未知指令')) {
           cls = 'error';
-        } else if (/goblin|shaman|raven|guard|dragon/.test(l) && l.includes('here')) {
+        } else if (/(哥布林|薩滿|渡鴉|衛兵|巨龍)/.test(l) && (l.includes('受到') || l.includes('生命') || l.includes('打倒'))) {
           cls = 'npc';
         }
         printLine(line, cls);
@@ -348,16 +372,16 @@ function connect() {
   };
 
   ws.onclose = () => {
-    setStatus('disconnected', 'Disconnected');
+    setStatus('disconnected', '已斷線');
     if (reconnectAttempts < 5) {
       reconnectAttempts++;
-      printLine('Connection lost. Reconnecting... (' + reconnectAttempts + ')', 'error');
+      printLine('連線中斷，重連中…（第 ' + reconnectAttempts + ' 次）', 'error');
       setTimeout(connect, 2000 * reconnectAttempts);
     }
   };
 
   ws.onerror = () => {
-    setStatus('disconnected', 'Connection error');
+    setStatus('disconnected', '連線錯誤');
   };
 }
 
@@ -389,6 +413,8 @@ input.addEventListener('keydown', (e) => {
   }
 });
 
+// 初始位置：冒險者中心
+highlightRoom('冒險者中心');
 connect();
 </script>
 </body>
